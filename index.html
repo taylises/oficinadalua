@@ -1,281 +1,1034 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oficina da Lua | Ateliê Autoral</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diário Sublime - Treino & Nutrição</title>
+    <!-- Ícones fofinhos -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Fontes arredondadas e suaves -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS para Estilização -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React e Babel para rodar o código no navegador -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;700&display=swap');
+        :root {
+            /* Paleta Fofíssima, Natural e Mística */
+            --bg-main: #FBF7FC; /* Fundo lavanda super claro */
+            --bg-card: #FFFFFF;
+            
+            --text-main: #5D4B5C; /* Roxo escuro/berinjela para leitura suave */
+            --text-muted: #A393A1;
+            
+            --primary: #FFB7B2; /* Rosa Pêssego / Salmão clarinho */
+            --primary-hover: #FFA49E;
+            --secondary: #D1B3D4; /* Lavanda Místico */
+            --accent: #C5E0D8; /* Verde Sálvia / Natureza */
+            --danger: #FF9AA2; 
+            
+            --prot-color: #FFB7B2; 
+            --carb-color: #C5E0D8;
+            --fat-color: #D1B3D4;
+
+            --shadow-cute: 0 12px 30px rgba(209, 179, 212, 0.15);
+            --border-cute: 2px solid #F5EAF7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            min-height: 100vh; 
+        }
+
+        h1, h2, h3, h4 { font-family: 'Quicksand', sans-serif; }
+
+        /* --- TELA DE LOGIN --- */
+        #login-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 20px; text-align: center;
+            background: linear-gradient(135deg, #FBF7FC, #F5EAF7, #FFF0F5);
+        }
+        .login-card {
+            background: var(--bg-card); padding: 40px 30px; border-radius: 35px;
+            box-shadow: var(--shadow-cute); width: 100%; max-width: 400px;
+            border: var(--border-cute); position: relative; overflow: hidden;
+        }
+        .login-card::before {
+            content: ''; position: absolute; top: -50px; left: -50px; width: 150px; height: 150px;
+            background: rgba(255, 183, 178, 0.1); border-radius: 50%; z-index: 0;
+        }
+        .login-content { position: relative; z-index: 1; }
+        .login-icon { font-size: 54px; color: var(--primary); margin-bottom: 10px; }
+        .login-title { font-size: 32px; font-weight: 700; margin-bottom: 5px; color: var(--text-main); }
+        .login-subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 35px; font-weight: 600; }
         
-        body {
-            font-family: 'Playfair Display', serif;
-            background-color: #0f110e;
-            color: #e2e2d5;
-            margin: 0;
-            overflow-x: hidden;
+        .cute-input {
+            width: 100%; padding: 18px 20px; margin-bottom: 15px;
+            border-radius: 20px; border: var(--border-cute);
+            font-family: 'Nunito', sans-serif; font-size: 15px; color: var(--text-main); font-weight: 600;
+            background: #FDFBFE; transition: 0.3s;
         }
-
-        .font-sans { font-family: 'Inter', sans-serif; }
-
-        @keyframes pulse-soft {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.1); }
+        .cute-input:focus { outline: none; border-color: var(--primary); background: #FFF; box-shadow: 0 0 0 4px rgba(255, 183, 178, 0.2); }
+        .cute-input::placeholder { color: #D1C5D0; font-weight: 600; }
+        
+        .cute-btn {
+            width: 100%; padding: 18px; border-radius: 20px; border: none;
+            background: var(--primary); color: #FFF; font-family: 'Quicksand', sans-serif;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px;
+            box-shadow: 0 6px 15px rgba(255, 183, 178, 0.3); display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-
-        .animate-pulse-soft {
-            animation: pulse-soft 3s infinite ease-in-out;
+        .cute-btn:hover { transform: translateY(-2px); background: var(--primary-hover); }
+        .cute-btn:active { transform: translateY(1px); }
+        .cute-btn.btn-outline { 
+            background: transparent; color: var(--text-muted); border: 2px solid #F5EAF7; 
+            margin-top: 15px; box-shadow: none; 
         }
+        .cute-btn.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .cute-btn.btn-accent { background: var(--accent); box-shadow: 0 6px 15px rgba(197, 224, 216, 0.4); color: #4A5D57; }
+        .cute-btn.btn-accent:hover { background: #B3D1C8; }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0f110e; }
-        ::-webkit-scrollbar-thumb { background: #d4af37; }
+        /* --- APP PRINCIPAL --- */
+        #app-content { display: none; padding-bottom: 110px; }
+
+        header {
+            background: var(--bg-card); padding: 50px 20px 30px; text-align: center;
+            border-bottom-left-radius: 35px; border-bottom-right-radius: 35px;
+            box-shadow: 0 4px 20px rgba(209, 179, 212, 0.08); margin-bottom: 25px;
+            position: relative; overflow: hidden;
+        }
+        .header-tag {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+            color: var(--primary); font-weight: 800; margin-bottom: 8px; display: inline-block;
+            background: #FFF0F5; padding: 4px 12px; border-radius: 20px;
+        }
+        header h1 { font-size: 32px; font-weight: 700; margin-bottom: 5px; color: var(--text-main); }
+        .subtitle { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+        .section { display: none; animation: fadeIn 0.4s ease-out; }
+        .section.active { display: block; }
+
+        /* Seletores e Cards */
+        .goal-selector { display: flex; background: #FDFBFE; border-radius: 20px; padding: 6px; margin-bottom: 25px; border: var(--border-cute); }
+        .goal-btn { 
+            flex: 1; padding: 14px; text-align: center; border: none; background: transparent; 
+            color: var(--text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase; 
+            letter-spacing: 1px; border-radius: 16px; cursor: pointer; transition: 0.3s; 
+        }
+        .goal-btn.active { background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-cute); }
+
+        .card { 
+            background: var(--bg-card); border-radius: 30px; padding: 25px; 
+            margin-bottom: 25px; box-shadow: var(--shadow-cute); border: var(--border-cute); 
+        }
+        .card-title { font-size: 20px; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
+        .card-title i { color: var(--primary); font-size: 26px; }
+
+        /* Resumo Diário */
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px dashed #F5EAF7; }
+        .summary-box { background: #FDFBFE; padding: 20px 15px; border-radius: 24px; text-align: center; border: var(--border-cute); }
+        .summary-box span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 800; margin-bottom: 8px; }
+        .summary-box strong { font-family: 'Quicksand', sans-serif; font-size: 34px; font-weight: 700; line-height: 1; }
+        .text-in { color: var(--primary); }
+        .text-out { color: var(--accent); }
+
+        /* Barras de Progresso */
+        .macro-row { margin-bottom: 18px; }
+        .macro-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; font-weight: 700; }
+        .progress-bg { background: #F5EAF7; height: 12px; border-radius: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 20px; transition: width 0.8s ease; }
+        .p-prot { background: var(--prot-color); }
+        .p-carb { background: var(--carb-color); }
+        .p-fat { background: var(--fat-color); }
+        
+        /* Inputs fofos */
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; }
+        select, input[type="number"], input[type="text"], input[type="date"], input[type="password"], textarea { 
+            width: 100%; background: #FDFBFE; border: var(--border-cute); color: var(--text-main); 
+            padding: 16px; border-radius: 20px; font-size: 14px; font-weight: 600; outline: none; 
+            transition: 0.3s; font-family: 'Nunito', sans-serif; 
+        }
+        select:focus, input:focus, textarea:focus { border-color: var(--primary); background: #FFF; box-shadow: 0 0 0 4px rgba(255, 183, 178, 0.2); }
+        
+        .input-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .input-box { position: relative; }
+        .input-box span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); font-weight: 800; }
+
+        /* Grupo Inteligência Artificial */
+        .ai-group { background: #FFF0F5; padding: 20px; border-radius: 24px; border: 2px dashed var(--primary); margin-bottom: 25px; }
+        .ai-group label { display: flex; align-items: center; gap: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 12px; font-weight: 800; }
+        
+        /* Feed e Histórico */
+        .feed-header { font-family: 'Quicksand', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-main); margin: 35px 0 20px; }
+        .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--bg-card); border-radius: 24px; margin-bottom: 15px; border: var(--border-cute); box-shadow: 0 4px 15px rgba(209, 179, 212, 0.05); }
+        .feed-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+        .feed-info p { font-size: 12px; color: var(--text-muted); font-weight: 600; display: flex; gap: 12px; }
+        .feed-number { font-size: 18px; font-weight: 800; }
+        .feed-number.kcal-in { color: var(--primary); }
+        .feed-number.kcal-out { color: var(--accent); }
+        .btn-delete { background: #F5EAF7; border: none; color: var(--text-muted); cursor: pointer; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.2s; }
+        .btn-delete:hover { background: var(--danger); color: #FFF; transform: scale(1.05); }
+
+        /* Evolução */
+        .profile-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #FFF; padding: 25px; border-radius: 30px; margin-bottom: 25px; box-shadow: var(--shadow-cute); }
+        .profile-avatar { width: 65px; height: 65px; background: rgba(255,255,255,0.3); border-radius: 22px; display: flex; align-items: center; justify-content: center; font-family: 'Quicksand', sans-serif; font-size: 24px; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); }
+        .profile-data h3 { font-size: 24px; margin-bottom: 5px; }
+        .profile-data p { font-size: 13px; opacity: 0.95; font-weight: 600; }
+
+        .evolution-item { background: var(--bg-card); border: var(--border-cute); padding: 20px; border-radius: 24px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(209, 179, 212, 0.05); }
+        .evo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px dashed #F5EAF7; }
+        .evo-date { font-weight: 800; font-size: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .evo-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .metric { display: flex; flex-direction: column; gap: 6px; }
+        .metric-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px; }
+        .metric-value { font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .diff-badge { font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 800; }
+        .diff-pos { background: #E2F0CB; color: #5D7A5C; } 
+        .diff-neg { background: #FFE0E0; color: #B56B68; } 
+        .diff-neutral { background: #F5EAF7; color: var(--text-muted); }
+
+        /* Treinos */
+        .workout-day { margin-bottom: 20px; }
+        .workout-header { background: var(--bg-card); padding: 22px 25px; border-radius: 24px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: var(--border-cute); box-shadow: var(--shadow-cute); transition: 0.3s; }
+        .workout-header h3 { font-size: 15px; display: flex; align-items: center; gap: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .workout-header h3 span { background: var(--primary); color: #FFF; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 18px; font-weight: 800; }
+        .workout-content { background: #FDFBFE; padding: 25px 20px 20px; border-radius: 0 0 24px 24px; margin-top: -15px; display: none; border: var(--border-cute); border-top: none; }
+        .workout-day.open .workout-content { display: block; animation: slideDown 0.3s ease; }
+        .workout-day.open .workout-header { border-radius: 24px 24px 0 0; border-bottom: 2px dashed #F5EAF7; box-shadow: none; }
+        
+        .exercise { padding: 18px 0; border-bottom: 2px solid #F5EAF7; position: relative; }
+        .exercise:last-child { border-bottom: none; padding-bottom: 0; }
+        .ex-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .ex-details h4 { font-size: 17px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; }
+        .ex-details p { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+        .ex-sets { background: #FFF0F5; color: var(--primary); padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: 800; text-align: center; white-space: nowrap; }
+        .btn-video { display: inline-flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 12px; font-weight: 800; text-decoration: none; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; background: transparent; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-video:hover { color: var(--primary); transform: translateX(5px); }
+
+        /* Menu de Navegação Inferior */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px); border-top-left-radius: 35px; border-top-right-radius: 35px;
+            display: flex; justify-content: space-around; padding: 15px 10px 25px; 
+            box-shadow: 0 -5px 25px rgba(209, 179, 212, 0.15); z-index: 100; border-top: var(--border-cute);
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #D1C5D0; text-decoration: none; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; background: none; border: none; flex: 1; }
+        .nav-item i { font-size: 28px; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); transform: translateY(-4px); }
+        .nav-item.active i { color: var(--primary); filter: drop-shadow(0 4px 6px rgba(255, 183, 178, 0.4)); }
+
+        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Esconder controles das barras de número */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+    <!-- 1. TELA DE LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-content">
+                <i class="ph-fill ph-plant login-icon"></i>
+                <h1 class="login-title">Diário Sublime</h1>
+                <p class="login-subtitle">Nutrição, Treinos & Magia ✨</p>
+                
+                <input type="email" id="email" class="cute-input" placeholder="Seu e-mail lindo">
+                <input type="password" id="password" class="cute-input" placeholder="Sua senha secreta">
+                
+                <button class="cute-btn" onclick="fazerLogin()"><i class="ph-bold ph-sparkle"></i> Entrar Mágicamente</button>
+                <button class="cute-btn btn-outline" onclick="criarConta()">Criar Nova Conta</button>
+            </div>
+        </div>
+    </div>
 
-        // --- COMPONENTES DE ÍCONES (SVG Direto para garantir funcionamento) ---
-        const IconStar = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
-                <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-            </svg>
-        );
+    <!-- 2. APP PRINCIPAL -->
+    <div id="app-content">
+        <header>
+            <span class="header-tag">✨ Seu Espaço</span>
+            <h1>Carol S.</h1>
+            <p class="subtitle">Atleta Híbrida 🌸 Ovolactovegetariana</p>
+        </header>
 
-        const IconMoon = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-        );
-
-        const IconCat = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" className={className}>
-                <path d="M12 5c.67 0 1.35.09 2 .26V5a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.76c.65.17 1.33.24 2 .24 0 1.66-1.34 3-3 3h-6C8.34 9 7 7.66 7 6c.67 0 1.35-.07 2-.24V5a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.26zM2 21c0-4 3.33-7 7-7h6c3.67 0 7 3 7 7v1H2v-1z"></path>
-            </svg>
-        );
-
-        // --- ELEMENTOS DE ATMOSFERA ---
-
-        const FundoMistico = () => {
-            const stars = useMemo(() => [...Array(25)].map((_, i) => ({
-                id: i,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                size: Math.random() * 20 + 10,
-                blur: Math.random() * 3,
-                delay: Math.random() * 5,
-                duration: 3 + Math.random() * 4
-            })), []);
-
-            return (
-                <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#0f110e]">
-                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/10 blur-[120px] rounded-full" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[120px] rounded-full" />
-                    
-                    {stars.map(s => (
-                        <div key={s.id} className="absolute text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)] animate-pulse-soft"
-                             style={{
-                                top: s.top,
-                                left: s.left,
-                                filter: `blur(${s.blur}px)`,
-                                animationDelay: `${s.delay}s`,
-                                animationDuration: `${s.duration}s`
-                             }}>
-                            <IconStar size={s.size} />
-                        </div>
-                    ))}
-                    <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{backgroundImage: `url('https://www.transparenttextures.com/patterns/handmade-paper.png')`}} />
+        <div class="container">
+            
+            <!-- DIÁRIO -->
+            <div id="sec-diario" class="section active">
+                <div class="goal-selector">
+                    <button class="goal-btn active" onclick="setGoal('emagrecer')" id="btn-emagrecer">Definir Corpo</button>
+                    <button class="goal-btn" onclick="setGoal('massa')" id="btn-massa">Hipertrofia</button>
                 </div>
-            );
+
+                <div class="card">
+                    <h3 class="card-title"><i class="ph-fill ph-chart-pie-slice"></i> Resumo Mágico do Dia</h3>
+                    <div class="summary-grid">
+                        <div class="summary-box">
+                            <span>Ingestão 🌸</span>
+                            <strong class="text-in" id="kcal-current">0</strong>
+                            <span style="font-size: 10px; margin-top:4px; font-weight:600; text-transform:none;">Meta: <b id="kcal-max">1600</b> kcal</span>
+                        </div>
+                        <div class="summary-box">
+                            <span>Gasto Ativo 🌿</span>
+                            <strong class="text-out" id="kcal-burned">0</strong>
+                            <span style="font-size: 10px; margin-top:4px; font-weight:600; text-transform:none;">Em treinos hoje</span>
+                        </div>
+                    </div>
+                    
+                    <div class="macro-row">
+                        <div class="macro-header"><span>Proteínas 🥚</span><span id="prot-text">0 / 130g</span></div>
+                        <div class="progress-bg"><div class="progress-fill p-prot" id="bar-prot" style="width: 0%;"></div></div>
+                    </div>
+                    <div class="macro-row">
+                        <div class="macro-header"><span>Carboidratos 🍞</span><span id="carb-text">0 / 160g</span></div>
+                        <div class="progress-bg"><div class="progress-fill p-carb" id="bar-carb" style="width: 0%;"></div></div>
+                    </div>
+                    <div class="macro-row">
+                        <div class="macro-header"><span>Gorduras 🥑</span><span id="fat-text">0 / 48g</span></div>
+                        <div class="progress-bg"><div class="progress-fill p-fat" id="bar-fat" style="width: 0%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><i class="ph-fill ph-bowl-food"></i> O que comemos?</h3>
+                    
+                    <div class="ai-group">
+                        <label><i class="ph-fill ph-magic-wand" style="font-size:18px;"></i> Assistente Inteligente</label>
+                        <textarea id="ai-input" rows="2" placeholder="O que você comeu? Ex: Panqueca de aveia, 1 maçã..."></textarea>
+                        <button id="btn-ai" class="cute-btn" style="padding:14px; font-size:14px;" onclick="calculateAI()"><i class="ph-bold ph-sparkle"></i> Calcular com IA</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Minhas Refeições Salvas 📚</label>
+                        <select id="smart-food" onchange="fillSmartFood()"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Nome do Prato 🥣</label>
+                        <input type="text" id="food-name" placeholder="Ex: Ovos Mexidos">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-box"><input type="number" id="food-prot" placeholder="0"><span>PT</span></div>
+                        <div class="input-box"><input type="number" id="food-carb" placeholder="0"><span>CB</span></div>
+                        <div class="input-box"><input type="number" id="food-fat" placeholder="0"><span>GD</span></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom: 20px; padding: 5px;">
+                        <input type="checkbox" id="save-recipe" style="width:20px; height:20px; accent-color: var(--primary); cursor:pointer;">
+                        <label for="save-recipe" style="font-size: 13px; font-weight: 700; color:var(--text-muted); cursor:pointer;">Salvar no meu livrinho de receitas</label>
+                    </div>
+                    <button class="cute-btn" onclick="addFood()"><i class="ph-bold ph-plus"></i> Registrar Refeição</button>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><i class="ph-fill ph-sneaker"></i> Movimento do Dia</h3>
+                    <div class="input-group">
+                        <label>Qual foi o treino? 💪</label>
+                        <select id="work-type">
+                            <option value="Musculação">Musculação (~6 kcal/min)</option>
+                            <option value="Corrida">Corrida (~10 kcal/min)</option>
+                            <option value="HIIT">HIIT / Funcional (~9 kcal/min)</option>
+                            <option value="Caminhada">Caminhada (~5 kcal/min)</option>
+                            <option value="Yoga/Alongamento">Yoga / Alongamento (~3 kcal/min)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Duração (Minutos) ⏱️</label>
+                        <input type="number" id="work-time" placeholder="Ex: 45">
+                    </div>
+                    <div class="input-group">
+                        <label>Anotações (Opcional) ✍️</label>
+                        <input type="text" id="work-notes" placeholder="Ex: Treino A completo e suado!">
+                    </div>
+                    <button class="cute-btn btn-accent" onclick="addActivity()"><i class="ph-bold ph-fire"></i> Registrar Atividade</button>
+                </div>
+
+                <h2 class="feed-header">Histórico de Hoje ✨</h2>
+                <div id="feed-container"></div>
+                <div style="height: 20px;"></div>
+            </div>
+
+            <!-- EVOLUÇÃO -->
+            <div id="sec-evolucao" class="section">
+                <div class="profile-card">
+                    <div class="profile-avatar">CS</div>
+                    <div class="profile-data">
+                        <h3>Carol S.</h3>
+                        <p>Objetivo: Recomposição Corporal 🌸</p>
+                        <p>Idade: 27 anos</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><i class="ph-fill ph-ruler"></i> Nova Avaliação</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); font-weight:600; margin-bottom: 20px; line-height: 1.5;">Registre suas medidas para acompanhar a magia acontecendo!</p>
+                    
+                    <div class="input-group">
+                        <label>Data 📅</label>
+                        <input type="date" id="evo-date">
+                    </div>
+
+                    <div class="input-row" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Peso</label>
+                            <input type="number" id="evo-weight" placeholder="00.0" step="0.1"><span>KG</span>
+                        </div>
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Gordura (BF)</label>
+                            <input type="number" id="evo-bf" placeholder="00.0" step="0.1"><span>%</span>
+                        </div>
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Músculo</label>
+                            <input type="number" id="evo-muscle" placeholder="00.0" step="0.1"><span>%</span>
+                        </div>
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Cintura</label>
+                            <input type="number" id="evo-waist" placeholder="00.0" step="0.1"><span>CM</span>
+                        </div>
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Quadril</label>
+                            <input type="number" id="evo-hips" placeholder="00.0" step="0.1"><span>CM</span>
+                        </div>
+                        <div class="input-box">
+                            <label style="font-size:11px; margin-bottom:6px; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Coxa</label>
+                            <input type="number" id="evo-thigh" placeholder="00.0" step="0.1"><span>CM</span>
+                        </div>
+                    </div>
+
+                    <button class="cute-btn" style="margin-top: 10px;" onclick="addEvolution()"><i class="ph-bold ph-heart"></i> Salvar Avaliação</button>
+                </div>
+
+                <h2 class="feed-header">Sua Jornada 📈</h2>
+                <div id="evolution-container"></div>
+                <div style="height: 20px;"></div>
+            </div>
+
+            <!-- PLANILHA DE TREINOS -->
+            <div id="sec-treino" class="section">
+                <div style="margin-bottom: 25px; text-align: center;">
+                    <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main);">Seus Treinos</h2>
+                    <p style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Time Híbrido 🌸 5 Dias</p>
+                </div>
+                
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)"><h3><span>A</span> Superiores</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Aquecimento</h4><p>Intervalo: 1 Min</p></div><div class="ex-sets">Pré-treino</div></div><button class="btn-video" onclick="playVideo('ta-aquec', 'Aquecimento A')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Flexão + Elev. Lateral</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('ta-flexao-lat', 'Flexão + Elev. Lateral')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Crucifixo + Elev. Frontal</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('ta-cruc-front', 'Crucifixo + Elev. Frontal')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Flexão Inc. + Militar</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('ta-flexinc-mil', 'Flexão Inc. + Militar')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Tríceps Testa</h4><p>Meta Repetição | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('ta-triceps', 'Tríceps Testa')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                    </div>
+                </div>
+
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)"><h3><span>B</span> Inferiores</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Agachamento Corporal</h4><p>Aquecimento | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tb-aquec', 'Aquecimento B')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Agachamento + Cadeira</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3x15+1m</div></div><button class="btn-video" onclick="playVideo('tb-agach-cad', 'Agachamento + Cadeira')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Avanço Alternado</h4><p>Cada lado | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tb-avanco', 'Avanço Alternado')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Elevação Pélvica</h4><p>Meta Repetição | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tb-pelvica', 'Elevação Pélvica')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Prancha Inv. + Passada</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">45s+15</div></div><button class="btn-video" onclick="playVideo('tb-prancha-pass', 'Prancha Inv. + Passada')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Agachamento Sumô</h4><p>Meta Repetição | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tb-sumo', 'Agachamento Sumô')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                    </div>
+                </div>
+
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)"><h3><span>C</span> Costas & Bíceps</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Puxada Alta + Serrote</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tc-puxada-ser', 'Puxada Alta + Serrote')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Crucifixo Inv + Remada</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tc-crucinv-rem', 'Crucifixo Inv + Remada')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Rosca + Encolhimento</h4><p>Bi-Set | Int: 90s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tc-rosca-enc', 'Rosca + Encolhimento')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Bíceps Martelo</h4><p>Meta Repetição | Int: 45s</p></div><div class="ex-sets">3 x 15</div></div><button class="btn-video" onclick="playVideo('tc-martelo', 'Bíceps Martelo')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                    </div>
+                </div>
+
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)"><h3><span>D</span> HIIT Abdominal</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <button class="cute-btn btn-outline" style="margin-bottom:15px;" onclick="playVideo('td-hiit-geral', 'Circuito HIIT Abdominal')"><i class="ph-fill ph-play-circle" style="font-size:20px;"></i> Vídeo do Circuito</button>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Crunch</h4><p>Intervalo: 10s</p></div><div class="ex-sets">20 Seg</div></div><button class="btn-video" onclick="playVideo('td-crunch', 'Crunch')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Elevação de Pernas</h4><p>Intervalo: 10s</p></div><div class="ex-sets">20 Seg</div></div><button class="btn-video" onclick="playVideo('td-elev-pernas', 'Elevação de Pernas')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Abdominal Remador</h4><p>Intervalo: 10s</p></div><div class="ex-sets">20 Seg</div></div><button class="btn-video" onclick="playVideo('td-remador', 'Abdominal Remador')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Prancha Abdominal</h4><p>Intervalo: 10s</p></div><div class="ex-sets">20 Seg</div></div><button class="btn-video" onclick="playVideo('td-prancha', 'Prancha Abdominal')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                    </div>
+                </div>
+
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)"><h3><span>E</span> Funcional</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <button class="cute-btn btn-outline" style="margin-bottom:15px;" onclick="playVideo('te-funcional-geral', 'Circuito Funcional')"><i class="ph-fill ph-play-circle" style="font-size:20px;"></i> Vídeo do Circuito</button>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Agachamento com Salto</h4><p>Intervalo: 1 Min</p></div><div class="ex-sets">15 Reps</div></div><button class="btn-video" onclick="playVideo('te-agach-salto', 'Agachamento com Salto')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Remada no TRX</h4><p>Intervalo: 90s</p></div><div class="ex-sets">15 Reps</div></div><button class="btn-video" onclick="playVideo('te-trx', 'Remada no TRX')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Recuo Alternado</h4><p>Intervalo: 90s</p></div><div class="ex-sets">15 Reps</div></div><button class="btn-video" onclick="playVideo('te-recuo', 'Recuo Alternado')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Flexão no Solo</h4><p>Intervalo: 90s</p></div><div class="ex-sets">15 Reps</div></div><button class="btn-video" onclick="playVideo('te-flexao', 'Flexão no Solo')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Superman</h4><p>Intervalo: 2 Min (Fim da volta)</p></div><div class="ex-sets">15 Reps</div></div><button class="btn-video" onclick="playVideo('te-superman', 'Superman')"><i class="ph-fill ph-play-circle"></i> Play Vídeo</button></div>
+                    </div>
+                </div>
+
+                <div class="workout-day"><div class="workout-header" onclick="toggleWorkout(this)" style="border-left: 6px solid var(--accent);"><h3><span style="background:var(--accent); color:#4A5D57;"><i class="ph-fill ph-sneaker"></i></span> Planilha 5KM</h3><i class="ph-bold ph-caret-down" style="font-size: 20px; color:var(--text-muted);"></i></div>
+                    <div class="workout-content">
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Terça: Int. 1:1</h4><p>Aquec. 5m (Z1) | 14x [1m (Z3) / 1m (Z1)]</p></div></div><button class="btn-video" onclick="playVideo('cor-terca', 'Corrida Terça')"><i class="ph-fill ph-play-circle"></i> Play Dicas</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Quinta: Int. 2:1</h4><p>Aquec. 5m (Z1) | 10x [2m (Z3) / 1m (Z1)]</p></div></div><button class="btn-video" onclick="playVideo('cor-quinta', 'Corrida Quinta')"><i class="ph-fill ph-play-circle"></i> Play Dicas</button></div>
+                        <div class="exercise"><div class="ex-header"><div class="ex-details"><h4>Sábado: Int. 3:1</h4><p>Aquec. 5m (Z1) | 7x [3m (Z3) / 1m (Z1)]</p></div></div><button class="btn-video" onclick="playVideo('cor-sabado', 'Corrida Sábado')"><i class="ph-fill ph-play-circle"></i> Play Dicas</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GUIA E AJUSTES -->
+            <div id="sec-guia" class="section">
+                <div style="margin-bottom: 25px; text-align: center;">
+                    <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main);">Ajustes Mágicos</h2>
+                </div>
+                
+                <div class="card">
+                    <h3 style="font-size: 16px; margin-bottom:12px; color:var(--primary); text-transform:uppercase; font-weight:800; display:flex; align-items:center; gap:8px;"><i class="ph-fill ph-magic-wand"></i> IA Inteligente</h3>
+                    <p style="font-size:14px; color:var(--text-muted); margin-bottom:15px; font-weight:600; line-height:1.6;">Atualize sua chave do Google Gemini para a IA dos alimentos continuar funcionando e adivinhando tudo:</p>
+                    <div class="input-group">
+                        <input type="password" id="user-api-key" placeholder="Cole sua chave AIza... aqui" style="margin-bottom:10px;">
+                    </div>
+                    <button class="cute-btn" onclick="saveApiKey()">Atualizar Chave ✨</button>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 16px; margin-bottom:12px; color:var(--text-main); text-transform:uppercase; font-weight:800; display:flex; align-items:center; gap:8px;"><i class="ph-fill ph-video-camera"></i> Vídeos Salvos</h3>
+                    <p style="font-size:14px; color:var(--text-muted); margin-bottom:15px; font-weight:600; line-height:1.6;">Os links dos seus vídeos de treino ficam gravados aqui. Quer apagar e colar novos?</p>
+                    <button class="cute-btn btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="resetVideos()"><i class="ph-bold ph-trash"></i> Resetar Links</button>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 16px; margin-bottom:12px; color:var(--accent); text-transform:uppercase; font-weight:800; display:flex; align-items:center; gap:8px;"><i class="ph-fill ph-heartbeat"></i> Zonas de Corrida</h3>
+                    <ul style="list-style:none; font-size:14px; font-weight:600; color:var(--text-muted); line-height:1.8;">
+                        <li><strong style="color:var(--text-main);">Z1 (Recuperação):</strong> 50-60%. Respiração tranquila.</li>
+                        <li><strong style="color:var(--text-main);">Z2 (Leve):</strong> 60-70%. Respiração levemente aumentada.</li>
+                        <li><strong style="color:var(--text-main);">Z3 (Limiar):</strong> 70-80%. Corridas fortes, difícil falar.</li>
+                        <li><strong style="color:var(--text-main);">Z4 (Pesado):</strong> 80-90%. Ofegante, impossível falar.</li>
+                        <li><strong style="color:var(--text-main);">Z5 (Máxima):</strong> 90-100%. Insustentável.</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="text-align: center; background: transparent; box-shadow: none; border: none; padding-top: 0;">
+                    <button class="cute-btn btn-outline" style="border-color: #E0D4E0; color: #A393A1; padding: 12px; font-size: 13px;" onclick="fazerLogout()"><i class="ph-bold ph-sign-out"></i> Sair da Minha Conta</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Menu de Navegação -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('sec-diario', this)"><i class="ph-fill ph-book-heart"></i><span>Diário</span></button>
+            <button class="nav-item" onclick="switchTab('sec-treino', this)"><i class="ph-fill ph-barbell"></i><span>Treinos</span></button>
+            <button class="nav-item" onclick="switchTab('sec-evolucao', this)"><i class="ph-fill ph-shooting-star"></i><span>Evolução</span></button>
+            <button class="nav-item" onclick="switchTab('sec-guia', this)"><i class="ph-fill ph-gear"></i><span>Ajustes</span></button>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // SUA CONFIGURAÇÃO OFICIAL DO FIREBASE!
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgKEMn_8c2DZ5eGAeL8VHdATg20m0pekY",
+            authDomain: "nutriplanner-c2c60.firebaseapp.com",
+            projectId: "nutriplanner-c2c60",
+            storageBucket: "nutriplanner-c2c60.firebasestorage.app",
+            messagingSenderId: "78677624585",
+            appId: "1:78677624585:web:a3d2f1432737e5549cb5d8",
+            measurementId: "G-9N5GCVTKMG"
         };
 
-        const LogoOficina = () => (
-            <div className="relative w-16 h-16 flex items-center justify-center group">
-                <IconMoon className="absolute w-12 h-12 text-[#d4af37] opacity-80 -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
-                <IconCat className="absolute w-7 h-7 text-stone-900 fill-stone-900 bottom-2 left-3" />
-                <IconStar className="absolute w-4 h-4 text-yellow-200 fill-yellow-200 top-1 right-2 animate-bounce" />
-            </div>
-        );
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // --- APP PRINCIPAL ---
+        // VARIÁVEIS DE ESTADO DO APP
+        const carolsKey = "AIzaSyDtm4MqgPoPUwDZxY0RtoTYsBwNe9xt4fE"; 
+        
+        let userId = null;
+        let currentGoal = 'emagrecer';
+        let consumed = { prot: 0, carb: 0, fat: 0, kcal: 0 };
+        let burned = 0;
+        let feedList = [];
+        let evolutionData = [];
+        
+        const defaultMeals = {
+            "Ovos mexidos (2 un)": { p: 12, c: 1, f: 19 },
+            "Whey Protein (1 scoop) + Iogurte": { p: 25, c: 12, f: 2 },
+            "Panqueca de Aveia": { p: 8, c: 22, f: 5 }
+        };
+        let smartDatabase = defaultMeals;
+        window.savedVideoLinks = {};
+        let userGeminiKey = "";
 
-        function App() {
-            const [isCartOpen, setIsCartOpen] = useState(false);
-            const [isEditMode, setIsEditMode] = useState(false);
-            const [cart, setCart] = useState([]);
-            
-            const [products, setProducts] = useState([
-                { id: 1, name: 'Cadernos Artesanais (A5 e A6)', price: 45.00, description: 'Costurados à mão, papel pólen 90g. Revestimento em tecido + papel kraft. Aproximadamente 3h30 de produção dedicada.', image: 'https://images.unsplash.com/photo-1544816153-12ad5d714b21?auto=format&fit=crop&w=800&q=80', specs: 'Papel Pólen 90g | Costura Manual' },
-                { id: 2, name: 'Brincos Artesanais', price: 15.00, description: 'Peças autorais com estética artística e identidade própria. Leves, confortáveis e design exclusivo.', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80', specs: 'Design Exclusivo | Produção Manual' },
-                { id: 3, name: 'Incensário Artesanal', price: 40.00, description: 'Peça decorativa funcional, com estética mística e natural. Resistente ao calor e modelado à mão.', image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&w=800&q=80', specs: 'Cerâmica | Resistente | Autoral' },
-                { id: 4, name: 'Caixinha de Joias', price: 60.00, description: 'Caixa decorativa artesanal para guardar acessórios. Estrutura firme e acabamento detalhado em tecido.', image: 'https://images.unsplash.com/photo-1582142306909-195724d339c4?auto=format&fit=crop&w=800&q=80', specs: 'Estrutura Firme | Revestimento Tecido' }
-            ]);
+        const goals = {
+            emagrecer: { kcal: 1600, prot: 130, carb: 160, fat: 48 },
+            massa: { kcal: 1950, prot: 130, carb: 230, fat: 55 }
+        };
 
-            const handleEdit = (id, field, value) => {
-                setProducts(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
-            };
+        // ================= SINCRONIZAÇÃO EM NUVEM (FIREBASE) =================
+        async function loadCloudData() {
+            if (!userId) return;
+            try {
+                const docRef = doc(db, 'users', userId);
+                const docSnap = await getDoc(docRef);
+                const today = new Date().toDateString();
 
-            const addToCart = (p) => {
-                setCart(prev => {
-                    const exists = prev.find(item => item.id === p.id);
-                    if (exists) return prev.map(item => item.id === p.id ? { ...item, qty: item.qty + 1 } : item);
-                    return [...prev, { ...p, qty: 1 }];
-                });
-                setIsCartOpen(true);
-            };
-
-            const cartTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-
-            const checkout = () => {
-                const msg = cart.map(i => `${i.qty}x ${i.name}`).join('%0A');
-                window.open(`https://wa.me/5511999999999?text=Oi Oficina da Lua! ✨%0AGostaria dessas peças:%0A${msg}%0ATotal: R$ ${cartTotal.toFixed(2)}`);
-            };
-
-            return (
-                <div className="relative min-h-screen">
-                    <FundoMistico />
-
-                    {/* Botão de Edição */}
-                    <button onClick={() => setIsEditMode(!isEditMode)} 
-                            className="fixed bottom-8 left-8 z-[100] bg-[#d4af37] text-stone-950 px-6 py-3 rounded-full shadow-2xl font-sans font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all">
-                        {isEditMode ? '✓ Salvar Alterações' : '✎ Modo Ateliê'}
-                    </button>
-
-                    {/* Header */}
-                    <header className="relative z-50 py-8 px-6 md:px-12">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center border-b border-stone-800/50 pb-8">
-                            <div className="flex items-center gap-4">
-                                <LogoOficina />
-                                <div>
-                                    <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-[#d4af37]">OFICINA DA LUA</h1>
-                                    <p className="font-sans text-[9px] uppercase tracking-[0.4em] text-stone-500 mt-1">Arte que se segura nas mãos</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-8">
-                                <button onClick={() => setIsCartOpen(true)} className="relative hover:text-[#d4af37] transition-colors">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                    {cart.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#d4af37] text-stone-950 rounded-full text-[9px] flex items-center justify-center font-bold">{cart.length}</span>}
-                                </button>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Hero */}
-                    <section className="relative z-10 max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-12 gap-12 items-center">
-                        <div className="md:col-span-7 space-y-8 order-2 md:order-1">
-                            <h2 className="text-5xl md:text-8xl font-bold italic leading-none tracking-tighter">
-                                A presença do <br/>
-                                <span className="text-[#d4af37] not-italic">feito à mão.</span>
-                            </h2>
-                            <p className="text-lg text-stone-400 max-w-xl leading-relaxed font-light">
-                                Não vendemos apenas objetos. Vendemos tempo, intenção e a textura da alma aplicada ao cotidiano. Cada peça é uma conversa única.
-                            </p>
-                        </div>
-                        <div className="md:col-span-5 order-1 md:order-2">
-                            <img src="https://images.unsplash.com/photo-1513689125086-6c432170e843?auto=format&fit=crop&w=800&q=80" 
-                                 className="w-full rounded-[3rem] shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000 object-cover aspect-[4/5] border border-stone-800" />
-                        </div>
-                    </section>
-
-                    {/* Produtos */}
-                    <section id="produtos" className="relative z-10 max-w-7xl mx-auto px-6 py-32">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-32">
-                            {products.map((p, idx) => (
-                                <div key={p.id} className={`flex flex-col space-y-6 ${idx % 2 !== 0 ? 'md:mt-24' : ''}`}>
-                                    <div className="relative group overflow-hidden bg-stone-900 rounded-2xl shadow-2xl">
-                                        <img src={p.image} className="w-full aspect-[4/5] object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                                        <button onClick={() => addToCart(p)} className="absolute bottom-6 right-6 bg-[#d4af37] text-stone-950 p-4 rounded-full shadow-xl hover:scale-110 transition-transform">
-                                            <span className="font-bold">+</span>
-                                        </button>
-                                        {isEditMode && (
-                                            <input className="absolute top-4 left-4 right-4 bg-stone-950/80 p-2 text-[10px]" value={p.image} onChange={e => handleEdit(p.id, 'image', e.target.value)} />
-                                        )}
-                                    </div>
-                                    <div className="space-y-4 px-2">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                {isEditMode ? (
-                                                    <input className="bg-transparent border-b border-[#d4af37] text-2xl font-bold w-full outline-none" value={p.name} onChange={e => handleEdit(p.id, 'name', e.target.value)} />
-                                                ) : (
-                                                    <h4 className="text-2xl font-bold">{p.name}</h4>
-                                                )}
-                                                <span className="text-[10px] uppercase tracking-widest text-[#d4af37] mt-1 block italic">{p.specs}</span>
-                                            </div>
-                                            <div className="text-right ml-4">
-                                                <span className="text-xl font-bold text-[#d4af37]">R${p.price.toFixed(2)}</span>
-                                            </div>
-                                        </div>
-                                        {isEditMode ? (
-                                            <textarea className="bg-stone-900 border border-stone-800 text-stone-400 p-3 w-full h-24 text-sm" value={p.description} onChange={e => handleEdit(p.id, 'description', e.target.value)} />
-                                        ) : (
-                                            <p className="text-stone-400 font-light leading-relaxed">{p.description}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Carrinho Sidebar */}
-                    {isCartOpen && (
-                        <div className="fixed inset-0 z-[200] flex justify-end">
-                            <div className="absolute inset-0 bg-stone-950/90 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
-                            <div className="relative w-full max-w-md bg-[#121412] h-full shadow-2xl border-l border-stone-800 p-8 flex flex-col">
-                                <div className="flex justify-between items-center mb-10">
-                                    <h3 className="text-2xl font-bold italic">Sacola Mística</h3>
-                                    <button onClick={() => setIsCartOpen(false)} className="text-stone-500 hover:text-white">✕</button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto space-y-6">
-                                    {cart.map(item => (
-                                        <div key={item.id} className="flex gap-4">
-                                            <img src={item.image} className="w-16 h-20 object-cover rounded border border-stone-800" />
-                                            <div className="flex-1">
-                                                <h5 className="font-bold text-sm">{item.name}</h5>
-                                                <p className="text-[#d4af37] text-xs mt-1">R$ {item.price.toFixed(2)}</p>
-                                                <div className="flex items-center gap-4 mt-2">
-                                                    <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? {...i, qty: Math.max(0, i.qty - 1)} : i).filter(i => i.qty > 0))} className="text-stone-600">－</button>
-                                                    <span className="text-xs font-sans">{item.qty}</span>
-                                                    <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? {...i, qty: i.qty + 1} : i))} className="text-stone-600">＋</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {cart.length > 0 && (
-                                    <div className="pt-8 border-t border-stone-800">
-                                        <div className="flex justify-between items-end mb-6">
-                                            <span className="text-stone-500 text-xs uppercase tracking-widest">Total</span>
-                                            <span className="text-3xl font-bold text-[#d4af37]">R$ {cartTotal.toFixed(2)}</span>
-                                        </div>
-                                        <button onClick={checkout} className="w-full bg-[#d4af37] text-stone-950 py-4 font-sans font-bold text-xs uppercase tracking-[0.3em] hover:bg-yellow-500 transition-all">
-                                            Enviar Encomenda
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    if (data.lastDate === today) {
+                        feedList = data.feedList || [];
+                        consumed = data.consumed || { prot: 0, carb: 0, fat: 0, kcal: 0 };
+                        burned = data.burned || 0;
+                    } else {
+                        feedList = [];
+                        consumed = { prot: 0, carb: 0, fat: 0, kcal: 0 };
+                        burned = 0;
+                    }
+                    
+                    smartDatabase = data.smartDatabase || defaultMeals;
+                    evolutionData = data.evolutionData || [];
+                    currentGoal = data.currentGoal || 'emagrecer';
+                    window.savedVideoLinks = data.videoLinks || {};
+                    userGeminiKey = data.userGeminiKey || "";
+                } else {
+                    await saveCloudData(); // Cria o documento se for conta nova
+                }
+                
+                // Atualiza a interface com os dados baixados
+                initUI();
+            } catch (e) {
+                console.error("Erro ao carregar dados:", e);
+            }
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        async function saveCloudData() {
+            if (!userId) return;
+            const today = new Date().toDateString();
+            const docRef = doc(db, 'users', userId);
+            try {
+                await setDoc(docRef, {
+                    feedList,
+                    consumed,
+                    burned,
+                    smartDatabase,
+                    evolutionData,
+                    currentGoal,
+                    lastDate: today,
+                    videoLinks: window.savedVideoLinks,
+                    userGeminiKey
+                }, { merge: true });
+            } catch (e) {
+                console.error("Erro ao salvar dados nas nuvens:", e);
+            }
+        }
+
+        // ================= SISTEMA DE LOGIN E SENHA =================
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                await loadCloudData();
+            } else {
+                userId = null;
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            }
+        });
+
+        window.fazerLogin = async () => {
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value;
+            if(!email || !pass) return alert("Preencha e-mail e senha, flor! 🌸");
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch(e) {
+                if(e.code === 'auth/invalid-credential') alert("E-mail ou senha incorretos! 🥺");
+                else alert("Erro ao entrar: " + e.message);
+            }
+        };
+
+        window.criarConta = async () => {
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value;
+            if(!email || !pass) return alert("Preencha e-mail e senha para criar a conta! 🌸");
+            if(pass.length < 6) return alert("A senha precisa ter pelo menos 6 caracteres! ✨");
+            
+            try {
+                await createUserWithEmailAndPassword(auth, email, pass);
+                alert("Conta mágica criada com sucesso! Bem-vinda! 🎉");
+            } catch(e) {
+                if(e.code === 'auth/email-already-in-use') alert("Esse e-mail já tem uma conta! Tente entrar.");
+                else alert("Erro ao criar conta: " + e.message);
+            }
+        };
+
+        window.fazerLogout = async () => {
+            if(confirm("Deseja sair do seu Diário Sublime?")) {
+                await signOut(auth);
+            }
+        };
+
+        // ================= FUNÇÕES DO APLICATIVO =================
+        function initUI() { 
+            loadSmartFoodDropdown();
+            updateDashboard(); 
+            renderEvolution();
+            document.getElementById('evo-date').valueAsDate = new Date();
+            renderFeed();
+            
+            document.querySelectorAll('.goal-btn').forEach(btn => btn.classList.remove('active'));
+            const goalBtn = document.getElementById('btn-' + currentGoal);
+            if(goalBtn) goalBtn.classList.add('active');
+        }
+
+        window.switchTab = (tabId, btnElement) => {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.toggleWorkout = (headerElement) => {
+            const dayCard = headerElement.parentElement;
+            dayCard.classList.toggle('open');
+            const icon = headerElement.querySelector('i.ph-caret-down, i.ph-caret-up');
+            if(dayCard.classList.contains('open')) icon.classList.replace('ph-caret-down', 'ph-caret-up');
+            else icon.classList.replace('ph-caret-up', 'ph-caret-down');
+        };
+
+        window.setGoal = async (goalKey) => {
+            currentGoal = goalKey;
+            document.querySelectorAll('.goal-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + goalKey).classList.add('active');
+            updateDashboard();
+            await saveCloudData();
+        };
+
+        window.addEvolution = async () => {
+            const dateInput = document.getElementById('evo-date').value;
+            const wInput = document.getElementById('evo-weight').value;
+            const bfInput = document.getElementById('evo-bf').value;
+            const mInput = document.getElementById('evo-muscle').value;
+            const waInput = document.getElementById('evo-waist').value;
+            const hInput = document.getElementById('evo-hips').value;
+            const tInput = document.getElementById('evo-thigh').value;
+
+            if(!dateInput || !wInput) return alert("A data e o peso são obrigatórios 💖");
+
+            const entry = {
+                id: Date.now(),
+                date: dateInput,
+                weight: parseFloat(wInput) || 0,
+                bf: parseFloat(bfInput) || 0,
+                muscle: parseFloat(mInput) || 0,
+                waist: parseFloat(waInput) || 0,
+                hips: parseFloat(hInput) || 0,
+                thigh: parseFloat(tInput) || 0
+            };
+
+            evolutionData.unshift(entry);
+            evolutionData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            document.getElementById('evo-weight').value = ''; document.getElementById('evo-bf').value = '';
+            document.getElementById('evo-muscle').value = ''; document.getElementById('evo-waist').value = '';
+            document.getElementById('evo-hips').value = ''; document.getElementById('evo-thigh').value = '';
+            
+            renderEvolution();
+            await saveCloudData();
+            alert("Avaliação mágica salva nas nuvens com sucesso! ✨");
+        };
+
+        function renderEvolution() {
+            const container = document.getElementById('evolution-container');
+            container.innerHTML = '';
+
+            if(evolutionData.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:14px; font-weight:600; margin-top:20px;">Nenhuma avaliação registrada ainda.</p>';
+                return;
+            }
+
+            evolutionData.forEach((entry, index) => {
+                let diffWeight = null; let diffWaist = null; let diffBf = null; let diffMuscle = null;
+                
+                if(index < evolutionData.length - 1) {
+                    const prev = evolutionData[index + 1];
+                    diffWeight = (entry.weight - prev.weight).toFixed(1);
+                    diffWaist = entry.waist > 0 && prev.waist > 0 ? (entry.waist - prev.waist).toFixed(1) : null;
+                    diffBf = entry.bf > 0 && prev.bf > 0 ? (entry.bf - prev.bf).toFixed(1) : null;
+                    diffMuscle = entry.muscle > 0 && prev.muscle > 0 ? (entry.muscle - prev.muscle).toFixed(1) : null;
+                }
+
+                const dateObj = new Date(entry.date);
+                const dateStr = dateObj.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC'});
+
+                const div = document.createElement('div');
+                div.className = 'evolution-item';
+                
+                let weightBadge = '';
+                if(diffWeight !== null) {
+                    if(diffWeight < 0) weightBadge = `<span class="diff-badge diff-pos">${diffWeight}kg</span>`;
+                    else if(diffWeight > 0) weightBadge = `<span class="diff-badge diff-neg">+${diffWeight}kg</span>`;
+                    else weightBadge = `<span class="diff-badge diff-neutral">0kg</span>`;
+                }
+                let bfBadge = '';
+                if(diffBf !== null) {
+                    if(diffBf < 0) bfBadge = `<span class="diff-badge diff-pos">${diffBf}%</span>`;
+                    else if(diffBf > 0) bfBadge = `<span class="diff-badge diff-neg">+${diffBf}%</span>`;
+                    else bfBadge = `<span class="diff-badge diff-neutral">0%</span>`;
+                }
+                let muscleBadge = '';
+                if(diffMuscle !== null) {
+                    if(diffMuscle > 0) muscleBadge = `<span class="diff-badge diff-pos">+${diffMuscle}%</span>`;
+                    else if(diffMuscle < 0) muscleBadge = `<span class="diff-badge diff-neg">${diffMuscle}%</span>`;
+                    else muscleBadge = `<span class="diff-badge diff-neutral">0%</span>`;
+                }
+
+                div.innerHTML = `
+                    <div class="evo-header">
+                        <span class="evo-date"><i class="ph-fill ph-calendar-heart" style="color:var(--primary); font-size:22px;"></i> ${dateStr}</span>
+                        <button class="btn-delete" onclick="deleteEvo(${entry.id})"><i class="ph-bold ph-trash"></i></button>
+                    </div>
+                    <div class="evo-metrics">
+                        <div class="metric"><span class="metric-label">Peso Corporal</span><span class="metric-value">${entry.weight.toFixed(1)} kg ${weightBadge}</span></div>
+                        <div class="metric"><span class="metric-label">Gordura (BF)</span><span class="metric-value">${entry.bf ? entry.bf.toFixed(1) + ' %' : '--'} ${bfBadge}</span></div>
+                        <div class="metric"><span class="metric-label">Músculo</span><span class="metric-value">${entry.muscle ? entry.muscle.toFixed(1) + ' %' : '--'} ${muscleBadge}</span></div>
+                        <div class="metric"><span class="metric-label">Cintura</span><span class="metric-value">${entry.waist ? entry.waist.toFixed(1) + ' cm' : '--'}</span></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.deleteEvo = async (id) => {
+            if(confirm("Deseja mesmo apagar essa avaliação da sua jornada?")) {
+                evolutionData = evolutionData.filter(e => e.id !== id);
+                renderEvolution();
+                await saveCloudData();
+            }
+        };
+
+        function loadSmartFoodDropdown() {
+            const select = document.getElementById('smart-food');
+            select.innerHTML = '<option value="">Escolha ou use a IA acima... ✨</option>';
+            for (let meal in smartDatabase) {
+                const opt = document.createElement('option');
+                opt.value = meal; opt.textContent = meal;
+                select.appendChild(opt);
+            }
+        }
+
+        window.fillSmartFood = () => {
+            const val = document.getElementById('smart-food').value;
+            if (smartDatabase[val]) {
+                const m = smartDatabase[val];
+                document.getElementById('food-name').value = val;
+                document.getElementById('food-prot').value = m.p;
+                document.getElementById('food-carb').value = m.c;
+                document.getElementById('food-fat').value = m.f;
+                document.getElementById('save-recipe').checked = false;
+            }
+        };
+
+        window.addFood = async () => {
+            const nameInput = document.getElementById('food-name');
+            const protInput = document.getElementById('food-prot');
+            const carbInput = document.getElementById('food-carb');
+            const fatInput = document.getElementById('food-fat');
+            const saveRecipeCb = document.getElementById('save-recipe');
+
+            const name = nameInput.value.trim() || 'Refeição Fofa';
+            const p = parseFloat(protInput.value) || 0;
+            const c = parseFloat(carbInput.value) || 0;
+            const f = parseFloat(fatInput.value) || 0;
+
+            if(p === 0 && c === 0 && f === 0) return alert("Insira os nutrientes, flor! 🌸");
+
+            if(saveRecipeCb.checked && nameInput.value.trim()) {
+                smartDatabase[name] = { p, c, f };
+                loadSmartFoodDropdown();
+            }
+
+            const kcal = Math.round((p * 4) + (c * 4) + (f * 9));
+            feedList.unshift({ id: Date.now(), type: 'food', name, p, c, f, kcal });
+            consumed.prot += p; consumed.carb += c; consumed.fat += f; consumed.kcal += kcal;
+
+            nameInput.value = ''; protInput.value = ''; carbInput.value = ''; fatInput.value = '';
+            document.getElementById('ai-input').value = ''; saveRecipeCb.checked = false;
+            
+            renderFeed(); 
+            updateDashboard();
+            await saveCloudData();
+        };
+
+        window.addActivity = async () => {
+            const name = document.getElementById('work-type').value;
+            const time = parseInt(document.getElementById('work-time').value);
+            const notes = document.getElementById('work-notes').value.trim();
+
+            if(isNaN(time) || time <= 0) return alert("Quanto tempo você treinou? Coloca os minutos pra mim! ⏱️");
+
+            let calPerMin = name === 'Corrida' ? 10 : name === 'HIIT' ? 9 : name === 'Caminhada' ? 5 : name === 'Yoga/Alongamento' ? 3 : 6;
+            const kcalOut = Math.round(time * calPerMin);
+            
+            feedList.unshift({ id: Date.now(), type: 'workout', name, time, notes, kcal: kcalOut });
+            burned += kcalOut;
+
+            document.getElementById('work-time').value = ''; document.getElementById('work-notes').value = '';
+            renderFeed(); 
+            updateDashboard();
+            await saveCloudData();
+        };
+
+        window.removeFeedItem = async (id) => {
+            const index = feedList.findIndex(i => i.id === id);
+            if(index > -1) {
+                const item = feedList[index];
+                if(item.type === 'food') {
+                    consumed.prot -= item.p; consumed.carb -= item.c; consumed.fat -= item.f; consumed.kcal -= item.kcal;
+                    if(consumed.prot<0) consumed.prot=0; if(consumed.carb<0) consumed.carb=0; if(consumed.fat<0) consumed.fat=0; if(consumed.kcal<0) consumed.kcal=0;
+                } else {
+                    burned -= item.kcal;
+                    if(burned<0) burned=0;
+                }
+                feedList.splice(index, 1);
+                renderFeed(); 
+                updateDashboard();
+                await saveCloudData();
+            }
+        };
+
+        function renderFeed() {
+            const container = document.getElementById('feed-container');
+            container.innerHTML = '';
+            feedList.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'feed-item';
+                
+                if(item.type === 'food') {
+                    div.innerHTML = `
+                        <div class="feed-info">
+                            <h4><i class="ph-fill ph-bowl-food" style="color:var(--primary);"></i> ${item.name}</h4>
+                            <p><span>PT: ${item.p}g</span> <span>CB: ${item.c}g</span> <span>GD: ${item.f}g</span></p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="feed-number kcal-in">+${item.kcal} <span style="font-size:10px;font-weight:700;">KCAL</span></span>
+                            <button class="btn-delete" onclick="removeFeedItem(${item.id})"><i class="ph-bold ph-x"></i></button>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="feed-info">
+                            <h4><i class="ph-fill ph-sneaker" style="color:var(--accent);"></i> ${item.name}</h4>
+                            <p>⏱️ ${item.time} min ${item.notes ? `| ${item.notes}` : ''}</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="feed-number kcal-out">-${item.kcal} <span style="font-size:10px;font-weight:700;">KCAL</span></span>
+                            <button class="btn-delete" onclick="removeFeedItem(${item.id})"><i class="ph-bold ph-x"></i></button>
+                        </div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        function updateDashboard() {
+            const target = goals[currentGoal];
+            document.getElementById('kcal-current').innerText = Math.round(consumed.kcal);
+            document.getElementById('kcal-max').innerText = target.kcal;
+            document.getElementById('kcal-burned').innerText = Math.round(burned);
+            
+            document.getElementById('prot-text').innerHTML = `<b>${Math.round(consumed.prot)}</b> / ${target.prot}g`;
+            document.getElementById('carb-text').innerHTML = `<b>${Math.round(consumed.carb)}</b> / ${target.carb}g`;
+            document.getElementById('fat-text').innerHTML = `<b>${Math.round(consumed.fat)}</b> / ${target.fat}g`;
+
+            document.getElementById('bar-prot').style.width = Math.min((consumed.prot / target.prot) * 100, 100) + '%';
+            document.getElementById('bar-carb').style.width = Math.min((consumed.carb / target.carb) * 100, 100) + '%';
+            document.getElementById('bar-fat').style.width = Math.min((consumed.fat / target.fat) * 100, 100) + '%';
+        }
+
+        window.calculateAI = async () => {
+            const input = document.getElementById('ai-input').value.trim();
+            if(!input) return alert("Me conte o que você comeu para eu calcular! 🌸");
+
+            const btn = document.getElementById('btn-ai');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Pensando...'; btn.disabled = true;
+
+            let result = null;
+
+            try {
+                let activeKey = userGeminiKey || carolsKey;
+                if (!activeKey) throw new Error("Chave não encontrada.");
+                
+                // Usar flash preview se for a chave em branco padrão de ambientes de teste, se não, usa a estável
+                let model = "gemini-1.5-flash";
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: `Aja como nutricionista. Calcule macros aproximados da refeição: "${input}".` }] }],
+                    systemInstruction: { parts: [{ text: "Retorne APENAS um JSON estrito. Propriedades obrigatórias: name (nome resumido do prato), p (proteina), c (carbo), f (gordura)." }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error("Erro na comunicação com a API.");
+
+                const data = await response.json();
+                result = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+
+            } catch (e) {
+                console.error(e);
+            }
+
+            if (result) {
+                document.getElementById('food-name').value = result.name;
+                document.getElementById('food-prot').value = Math.round(result.p);
+                document.getElementById('food-carb').value = Math.round(result.c);
+                document.getElementById('food-fat').value = Math.round(result.f);
+                document.getElementById('smart-food').value = '';
+                document.getElementById('save-recipe').checked = true;
+            } else {
+                alert("Opa, a magia falhou! Verifique sua internet ou sua chave da IA e tente de novo. 💖");
+            }
+            
+            btn.innerHTML = originalText; btn.disabled = false;
+        };
+
+        window.saveApiKey = async () => {
+            const key = document.getElementById('user-api-key').value.trim();
+            if(key) {
+                userGeminiKey = key;
+                await saveCloudData();
+                alert("Chave IA atualizada com sucesso nas nuvens! ✨");
+                document.getElementById('user-api-key').value = '';
+            }
+        };
+
+        window.playVideo = async (videoId, videoName) => {
+            let savedLinks = window.savedVideoLinks || {};
+            if (savedLinks[videoId] && savedLinks[videoId].trim() !== '') {
+                window.open(savedLinks[videoId], '_blank');
+            } else {
+                let userLink = prompt(`Onde está o vídeo mágico de "${videoName}"? Cole o link aqui:`);
+                if (userLink && userLink.trim() !== '') {
+                    if (!userLink.startsWith('http')) userLink = 'https://' + userLink;
+                    savedLinks[videoId] = userLink.trim();
+                    window.savedVideoLinks = savedLinks;
+                    await saveCloudData();
+                    window.open(savedLinks[videoId], '_blank');
+                }
+            }
+        };
+        
+        window.resetVideos = async () => {
+            if(confirm("Apagar todos os links de vídeos?")) {
+                window.savedVideoLinks = {};
+                await saveCloudData();
+                alert("Tudo limpinho! Você pode colar novos links quando quiser. 🌸");
+            }
+        };
     </script>
 </body>
 </html>
