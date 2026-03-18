@@ -110,22 +110,22 @@
     <script type="text/babel">
         const { useState, useMemo } = React;
 
-        // --- LOGÓTIPO EXATO DA TAYLISE ---
-        const LogoOficina = ({ size = 100 }) => {
-            const [temErro, setTemErro] = useState(false);
-
+        // --- LOGO: IMAGEM ORIGINAL DO CANVA ---
+        const LogoOficina = ({ size = 80 }) => {
+            const [imgError, setImgError] = useState(false);
+            
             return (
                 <div className="relative animate-float flex items-center justify-center" style={{ width: size, height: size }}>
-                    {!temErro ? (
+                    {!imgError ? (
                         <img 
-                            src="Design sem nome (2).jpg" 
+                            src="logo.png" 
                             alt="Logo Oficina da Lua" 
-                            className="w-full h-full object-contain rounded-full drop-shadow-[0_0_15px_rgba(220,168,104,0.3)]"
-                            onError={() => setTemErro(true)}
+                            className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(220,168,104,0.4)]"
+                            onError={() => setImgError(true)}
                         />
                     ) : (
-                        <div className="w-full h-full rounded-full border-2 border-dashed border-[#dca868] flex items-center justify-center p-2 text-center bg-[#202a36]">
-                            <span className="text-[#dca868] text-[8px] font-sans font-bold uppercase">Guarde a imagem "Design sem nome (2).jpg" nesta pasta</span>
+                        <div className="w-full h-full rounded-full border border-dashed border-[#dca868] flex items-center justify-center p-2 text-center bg-black/40 backdrop-blur">
+                            <span className="text-[#dca868] text-[8px] font-sans font-bold uppercase">Salve como logo.png</span>
                         </div>
                     )}
                 </div>
@@ -406,6 +406,23 @@
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* --- CATÁLOGO DO CANVA --- */}
+                                <div className="space-y-8 text-center pt-16 mt-12 border-t border-ouro/10">
+                                    <h3 className="font-serif text-3xl md:text-4xl font-bold tracking-tighter text-ouro">Catálogo Interativo</h3>
+                                    <p className="font-sans text-slate-300 font-light text-lg">Folheie as nossas coleções, peças e inspirações diretamente aqui.</p>
+                                    
+                                    <div className="max-w-2xl mx-auto">
+                                        <div style={{ position: 'relative', width: '100%', height: 0, paddingTop: '125.0000%', paddingBottom: 0, boxShadow: '0 20px 50px rgba(0,0,0,0.5)', marginTop: '1.6em', marginBottom: '0.9em', overflow: 'hidden', borderRadius: '1.5rem', willChange: 'transform' }}>
+                                            <iframe loading="lazy" style={{ position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, border: 'none', padding: 0, margin: 0 }}
+                                                src="https://www.canva.com/design/DAHEUaqAQcs/HK7-ZaOPz2UAhCkcdMY-Lg/view?embed" allowFullScreen allow="fullscreen">
+                                            </iframe>
+                                        </div>
+                                        <a href="https://www.canva.com/design/DAHEUaqAQcs/HK7-ZaOPz2UAhCkcdMY-Lg/view?utm_content=DAHEUaqAQcs&utm_campaign=designshare&utm_medium=embeds&utm_source=link" target="_blank" rel="noopener noreferrer" className="font-sans text-[10px] uppercase tracking-[0.2em] font-bold text-ouro hover:text-ouroclaro transition-colors mt-4 inline-block">
+                                            Design de Patricia Andrea Santos Silveira (Abrir no Canva) ↗
+                                        </a>
                                     </div>
                                 </div>
                             </div>
