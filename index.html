@@ -178,8 +178,8 @@
             const paintings = artworks.filter(a => a.category === 'Pintura / Ilustração');
 
             const handleOrderSubmit = async () => {
-                if (!orderForm.name || !orderForm.idea) return alert("Preencha seu nome e a sua ideia mágica!");
-                if (!user) return alert("Conectando ao banco de dados... Tente novamente.");
+                if (!orderForm.name || !orderForm.idea) return alert("Preencha o seu nome e a sua ideia mágica!");
+                if (!user) return alert("A ligar à base de dados... Tente novamente.");
                 
                 setIsSubmitting(true);
                 try {
@@ -199,7 +199,7 @@
                     window.open(`https://wa.me/5551981749825?text=${encodeURIComponent(msg)}`);
                     
                     setOrderForm({ name: '', type: 'Arte Personalizada', idea: '' });
-                    alert("Sua encomenda foi enviada para o ateliê!");
+                    alert("A sua encomenda foi enviada para o ateliê!");
                 } catch (error) {
                     console.error("Erro", error);
                     alert("Ocorreu um erro ao enviar.");
@@ -314,7 +314,7 @@
                                     <div className="flex justify-center mb-10"><LogoOficina size={180} /></div>
                                     <h1 className="font-serif text-4xl md:text-7xl font-bold tracking-tighter block leading-none text-ouro">Arte Feita à Mão com Alma e Magia</h1>
                                     <h2 className="font-serif text-xl md:text-2xl text-slate-300 block">Bem-vindo(a) à Oficina da Lua!</h2>
-                                    <p className="font-sans text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed block font-light">Meu trabalho é um mergulho nos mundos do desenho, da pintura e da cerâmica, criando peças únicas que levam mais cor e afeto para o seu cotidiano.</p>
+                                    <p className="font-sans text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed block font-light">O meu trabalho é um mergulho nos mundos do desenho, da pintura e da cerâmica, criando peças únicas que levam mais cor e afeto para o seu quotidiano.</p>
                                 </header>
 
                                 <div className="space-y-12">
@@ -322,7 +322,7 @@
                                         <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Cerâmica e Biscuit</h3>
                                     </div>
                                     {arts.length === 0 ? (
-                                        <p className="text-slate-500 italic">Nenhuma peça de cerâmica no estoque no momento.</p>
+                                        <p className="text-slate-500 italic">Nenhuma peça de cerâmica no stock no momento.</p>
                                     ) : (
                                         <div className="grid md:grid-cols-2 gap-10">
                                             {arts.map(art => <ArtworkCard key={art.id} art={art} />)}
@@ -333,7 +333,7 @@
                                 <div id="form-encomenda" className="bg-card p-8 md:p-16 rounded-[3rem] border border-ouro/20 shadow-2xl relative overflow-hidden">
                                     <div className="max-w-xl mx-auto space-y-8 relative z-10">
                                         <div className="text-center space-y-4 mb-10">
-                                            <h3 className="font-serif text-4xl md:text-5xl font-bold tracking-tighter text-ouro">Faça sua Encomenda</h3>
+                                            <h3 className="font-serif text-4xl md:text-5xl font-bold tracking-tighter text-ouro">Faça a sua Encomenda</h3>
                                             <p className="font-sans text-slate-300 font-light text-lg">De cerâmicas a ilustrações, vamos transformar a sua imaginação em arte.</p>
                                         </div>
                                         <div className="grid gap-5">
@@ -346,12 +346,12 @@
                                                 <option>Caderno Artesanal Personalizado</option>
                                                 <option>Orçamento para Tatuagem</option>
                                             </select>
-                                            <textarea placeholder="Me conte sua ideia! (Cores, referências, sentimentos da peça...)" 
+                                            <textarea placeholder="Conte-me a sua ideia! (Cores, referências, sentimentos da peça...)" 
                                                       className="form-input font-sans text-sm h-32 resize-none"
                                                       value={orderForm.idea} onChange={e => setOrderForm({...orderForm, idea: e.target.value})}></textarea>
                                             
                                             <button onClick={handleOrderSubmit} disabled={isSubmitting} className={`w-full bg-ouro text-fundo py-5 rounded-xl font-sans font-bold text-xs uppercase tracking-widest transition-all shadow-lg mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-ouroclaro shadow-ouro/20'}`}>
-                                                {isSubmitting ? 'Enviando ao Ateliê...' : 'Enviar Encomenda (WhatsApp)'}
+                                                {isSubmitting ? 'A Enviar ao Ateliê...' : 'Enviar Encomenda (WhatsApp)'}
                                             </button>
                                         </div>
                                     </div>
@@ -363,10 +363,10 @@
                             <div className="space-y-12 fade-in">
                                 <div className="text-center space-y-8">
                                     <h2 className="font-serif text-5xl font-bold text-ouro">Galeria de Pinturas</h2>
-                                    <p className="text-slate-300 font-light">Explorando o lado sombrio e sensível da estética.</p>
+                                    <p className="text-slate-300 font-light">A explorar o lado sombrio e sensível da estética.</p>
                                 </div>
                                 {paintings.length === 0 ? (
-                                    <p className="text-slate-500 italic text-center">Nenhuma pintura no estoque no momento.</p>
+                                    <p className="text-slate-500 italic text-center">Nenhuma pintura no stock no momento.</p>
                                 ) : (
                                     <div className="grid md:grid-cols-2 gap-10">
                                         {paintings.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
@@ -400,6 +400,22 @@
                                     <div className="bg-card p-8 rounded-3xl border border-ouro/20 shadow-lg">
                                         <h4 className="font-serif text-xl font-bold text-ouro mb-3 flex items-center gap-2">✨ Detalhes que encantam</h4>
                                         <p className="text-slate-300 text-sm leading-relaxed font-light">Todas as folhas do miolo possuem cantos arredondados, um cuidado que evita o desgaste e as "orelhas" nas pontas do papel. E cada caderno começa com uma folha de rosto em papel kraft 120g, que adiciona um toque rústico e protege seu miolo.</p>
+                                    </div>
+                                </div>
+
+                                {/* GRELHA DE IMAGENS DE DETALHE */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 mb-12">
+                                    <div className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-ouro/20 hover:border-ouro/50 transition-colors">
+                                        <img src={parseDriveUrl("https://drive.google.com/file/d/1WmkFVyZ6VDoZg-PCg4tR7dB5F6mUQPtx/view?usp=sharing")} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Caderno Artesanal" />
+                                    </div>
+                                    <div className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-ouro/20 hover:border-ouro/50 transition-colors">
+                                        <img src={parseDriveUrl("https://drive.google.com/file/d/1Tv0p-iVat3iRZyJ4BmlzV3p6TWBCfaev/view?usp=sharing")} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Detalhe Capa" />
+                                    </div>
+                                    <div className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-ouro/20 hover:border-ouro/50 transition-colors">
+                                        <img src={parseDriveUrl("https://drive.google.com/file/d/1ESCw8Ff0fP9HjMYUP40F8qChD9POnUZ1/view?usp=sharing")} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Detalhe Costura" />
+                                    </div>
+                                    <div className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-ouro/20 hover:border-ouro/50 transition-colors">
+                                        <img src={parseDriveUrl("https://drive.google.com/file/d/152o2u1T3dOUqZtzn9BQN_sbT43Vmd4Kw/view?usp=sharing")} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Detalhe Cantoneira" />
                                     </div>
                                 </div>
 
