@@ -246,7 +246,6 @@
                                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic font-sans">Sem Imagem</div>
                             )}
                             
-                            {/* SETAS DE NAVEGAÇÃO PARA CARROSSEL */}
                             {images.length > 1 && (
                                 <>
                                     <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white rounded-full z-20 backdrop-blur-sm transition-all" aria-label="Foto anterior">
@@ -258,7 +257,6 @@
                                 </>
                             )}
                             
-                            {/* NAVEGAÇÃO DE BOLINHAS (VISUAL APENAS) */}
                             {images.length > 1 && (
                                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
                                     {images.map((_, idx) => (
@@ -276,7 +274,7 @@
                                 <div className="text-right ml-4 font-sans shrink-0">
                                     <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
                                     <span className="text-lg font-bold text-texto">
-                                        {art.price === '0,00' ? 'Sob Cons.' : `R$ ${art.price}`}
+                                        {art.price === '0,00' || !art.price ? 'Sob Cons.' : `R$ ${art.price}`}
                                     </span>
                                 </div>
                             </div>
@@ -287,7 +285,6 @@
                 );
             };
 
-            // COMPONENTE: Card Simples para Processos e Suspiros (Sem botão de compra)
             const SimpleImageCard = ({ src, art }) => {
                 const displayImage = src || (art && art.images && art.images.length > 0 ? art.images[0] : art?.image);
                 const hasRealTitle = art && art.name && art.name !== 'Sem Título';
@@ -305,7 +302,6 @@
                 )
             };
 
-            // FALLBACKS (Apenas mostrados se o Admin ainda não importou para o Banco de Dados)
             const hardcodedAcrilica = [
                 "https://drive.google.com/file/d/1OAlb6R0-pLicXjQTIf4Rv_NABmwBCkUk/view?usp=sharing",
                 "https://drive.google.com/file/d/1WjpHXdXJkn9yFEYjffN8tDa17V4aNE-t/view?usp=sharing",
@@ -456,14 +452,13 @@
                                     <div className="grid md:grid-cols-2 gap-10">
                                         {pinturasAcrilica.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
                                         
-                                        {/* Fallback caso a coleção no Firebase esteja vazia */}
                                         {pinturasAcrilica.length === 0 && hardcodedAcrilica.map((src, idx) => (
                                             <div key={`acrilica-fixa-${idx}`} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
                                                 <div className="aspect-[4/5] bg-slate-800 relative">
                                                     <img src={src} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
                                                 </div>
                                                 <div className="p-8 space-y-4 flex-1 flex flex-col justify-center items-center text-center">
-                                                    <p className="text-slate-400 italic text-xs">(Peça ainda sem título no catálogo)</p>
+                                                    <p className="text-slate-400 italic text-xs">(Peça pendente de importação no Admin)</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -483,7 +478,7 @@
                                                     <img src={src} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
                                                 </div>
                                                 <div className="p-8 space-y-4 flex-1 flex flex-col justify-center items-center text-center">
-                                                    <p className="text-slate-400 italic text-xs">(Peça ainda sem título no catálogo)</p>
+                                                    <p className="text-slate-400 italic text-xs">(Peça pendente de importação no Admin)</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -1060,7 +1055,7 @@
                                 📔 Estampas (Cadernos)
                             </button>
                             <button onClick={() => setActiveTab('insumos')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'insumos' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🎨 Insumos</button>
-                            <button onClick={() => setActiveTab('galeria')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'galeria' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Galeria & Obras (Site)</button>
+                            <button onClick={() => setActiveTab('obras')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'obras' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Obras & Pinturas (Site)</button>
                         </nav>
                         <div className="p-4 border-t border-gray-800">
                             <button onClick={onLogout} className="w-full px-4 py-2 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-900/20 rounded-lg">Sair do Painel</button>
@@ -1443,19 +1438,19 @@
                             </div>
                         )}
 
-                        {activeTab === 'galeria' && (
+                        {activeTab === 'obras' && (
                             <div className="space-y-6 fade-in">
-                                <h2 className="text-2xl font-serif text-white">Galeria & Obras (Site)</h2>
-                                <p className="text-sm text-gray-400">Gerencie as obras que estão disponíveis no seu portfólio público.</p>
+                                <h2 className="text-2xl font-serif text-white">Obras & Pinturas (Site)</h2>
+                                <p className="text-sm text-gray-400">Gerencie as obras, pinturas e artes de suspiro que estão disponíveis no seu portfólio público.</p>
 
                                 {artworks.filter(a => a.category !== 'Cerâmica / Biscuit').length === 0 && (
-                                    <div className="bg-blue-900/30 border border-blue-500/50 p-4 rounded-xl flex justify-between items-center mb-6">
+                                    <div className="bg-blue-900/30 border border-blue-500/50 p-4 rounded-xl flex justify-between items-center mb-6 shadow-lg shadow-blue-900/20">
                                         <div>
                                             <h4 className="text-blue-400 font-bold text-sm">Importar Galeria Inicial</h4>
-                                            <p className="text-gray-400 text-xs mt-1">Clique ao lado para carregar as pinturas, processos e artes de suspiro que você configurou inicialmente. Assim, elas ficarão salvas no banco de dados e você poderá editar os títulos!</p>
+                                            <p className="text-gray-400 text-xs mt-1 leading-relaxed">Você tem 14 pinturas e imagens fixas no site que ainda não estão no banco de dados. Clique ao lado para importá-las e começar a editar os títulos e detalhes!</p>
                                         </div>
-                                        <button onClick={importInitialGallery} disabled={isImporting} className="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-blue-500 flex-shrink-0 ml-4 transition-colors">
-                                            {isImporting ? 'Importando...' : 'Importar Imagens'}
+                                        <button onClick={importInitialGallery} disabled={isImporting} className="bg-blue-600 text-white px-6 py-3 rounded-lg text-xs font-bold hover:bg-blue-500 flex-shrink-0 ml-4 transition-colors shadow-lg">
+                                            {isImporting ? 'A Importar...' : 'Importar Imagens'}
                                         </button>
                                     </div>
                                 )}
