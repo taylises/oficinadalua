@@ -114,6 +114,23 @@
         const { useState, useMemo, useEffect } = React;
         const appId = "oficinalua"; 
 
+        // --- FUNÇÃO AUXILIAR: CONVERSOR GOOGLE DRIVE ---
+        const parseDriveUrl = (url) => {
+            if (!url) return '';
+            // Tenta pegar o ID do padrão "drive.google.com/file/d/ID/view"
+            const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+            const match = url.match(driveRegex);
+            if (match && match[1]) return `https://lh3.googleusercontent.com/d/${match[1]}`;
+            
+            // Tenta pegar o ID do padrão "?id=ID"
+            const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
+            const matchId = url.match(idRegex);
+            if (matchId && matchId[1]) return `https://lh3.googleusercontent.com/d/${matchId[1]}`;
+            
+            // Retorna a URL original se não for do Drive (ex: Canva, Unsplash)
+            return url;
+        };
+
         // --- COMPONENTE LOGO ---
         const LogoOficina = ({ size = 80 }) => {
             const driveImageUrl = "https://lh3.googleusercontent.com/d/1Hxt6UiA_FTS_iFwxhOTRM5HO3CXc27qs";
@@ -188,6 +205,56 @@
                 }
             };
 
+            const handleOrderClick = (art) => {
+                setSection('inicio');
+                setTimeout(() => {
+                    const el = document.getElementById('form-encomenda');
+                    if(el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+                setOrderForm({...orderForm, type: art.category, idea: `Olá! Amei a peça: ${art.name}`});
+            };
+
+            // COMPONENTE: Card de Obra com Carrossel de Imagens
+            const ArtworkCard = ({ art }) => {
+                const [activeImg, setActiveImg] = useState(0);
+                // Previne falhas se as imagens antigas só tiverem a string "image"
+                const images = art.images && art.images.length > 0 ? art.images : (art.image ? [art.image] : []);
+
+                return (
+                    <div className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
+                        <div className="aspect-[4/5] bg-slate-800 relative">
+                            {images.length > 0 ? (
+                                <img src={images[activeImg]} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic font-sans">Sem Imagem</div>
+                            )}
+                            
+                            {/* Navegação de bolinhas para Múltiplas Imagens */}
+                            {images.length > 1 && (
+                                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
+                                    {images.map((_, idx) => (
+                                        <button key={idx} onClick={(e) => { e.stopPropagation(); setActiveImg(idx); }} 
+                                                className={`w-2 h-2 rounded-full transition-all ${activeImg === idx ? 'bg-ouro scale-125' : 'bg-white/50 hover:bg-white'}`}>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-8 space-y-4 flex-1 flex flex-col">
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{art.name}</h4>
+                                <div className="text-right ml-4 font-sans shrink-0">
+                                    <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
+                                    <span className="text-lg font-bold text-texto">R$ {art.price}</span>
+                                </div>
+                            </div>
+                            <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed whitespace-pre-line">{art.desc}</p>
+                            <button onClick={() => handleOrderClick(art)} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
+                        </div>
+                    </div>
+                );
+            };
+
             const stars = useMemo(() => [...Array(25)].map((_, i) => ({
                 id: i, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, size: Math.random() * 15 + 8, delay: `${Math.random() * 5}s`
             })), []);
@@ -243,27 +310,7 @@
                                         <p className="text-slate-500 italic">Nenhuma peça de cerâmica no estoque no momento.</p>
                                     ) : (
                                         <div className="grid md:grid-cols-2 gap-10">
-                                            {arts.map(art => (
-                                                <div key={art.id} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
-                                                    <div className="aspect-[4/5] bg-slate-800 relative">
-                                                        <img src={art.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                                                    </div>
-                                                    <div className="p-8 space-y-4 flex-1 flex flex-col">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{art.name}</h4>
-                                                            <div className="text-right ml-4 font-sans">
-                                                                <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
-                                                                <span className="text-lg font-bold text-texto">R$ {art.price}</span>
-                                                            </div>
-                                                        </div>
-                                                        <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed">{art.desc}</p>
-                                                        <button onClick={() => {
-                                                            document.getElementById('form-encomenda').scrollIntoView({ behavior: 'smooth' });
-                                                            setOrderForm({...orderForm, type: 'Cerâmica / Biscuit', idea: `Olá! Amei a peça: ${art.name}`});
-                                                        }} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            {arts.map(art => <ArtworkCard key={art.id} art={art} />)}
                                         </div>
                                     )}
                                 </div>
@@ -307,28 +354,7 @@
                                     <p className="text-slate-500 italic text-center">Nenhuma pintura no estoque no momento.</p>
                                 ) : (
                                     <div className="grid md:grid-cols-2 gap-10">
-                                        {paintings.map(paint => (
-                                            <div key={paint.id} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
-                                                <div className="aspect-[4/5] bg-slate-800 relative">
-                                                    <img src={paint.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                                                </div>
-                                                <div className="p-8 space-y-4 flex-1 flex flex-col">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{paint.name}</h4>
-                                                        <div className="text-right ml-4 font-sans">
-                                                            <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
-                                                            <span className="text-lg font-bold text-texto">R$ {paint.price}</span>
-                                                        </div>
-                                                    </div>
-                                                    <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed">{paint.desc}</p>
-                                                    <button onClick={() => {
-                                                        setSection('inicio');
-                                                        setTimeout(() => document.getElementById('form-encomenda').scrollIntoView({ behavior: 'smooth' }), 100);
-                                                        setOrderForm({...orderForm, type: 'Pintura / Ilustração', idea: `Olá! Quero a obra: ${paint.name}`});
-                                                    }} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar</button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        {paintings.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
                                     </div>
                                 )}
                             </div>
@@ -375,8 +401,8 @@
             const [editingSupId, setEditingSupId] = useState(null);
             const [editingSupQty, setEditingSupQty] = useState('');
 
-            // Estado Form Obras (Estoque)
-            const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+            // Estado Form Obras (Estoque) - Agora com suporte a Múltiplas Imagens
+            const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', images: ['', '', '', ''], category: 'Cerâmica / Biscuit' });
             const [editingArtworkId, setEditingArtworkId] = useState(null); 
 
             // Estado Modal Encomenda
@@ -384,7 +410,7 @@
             const [editingOrder, setEditingOrder] = useState(null);
             const [orderForm, setOrderForm] = useState({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' });
 
-            // --- ESTADOS DE COLEÇÕES ---
+            // Estado Coleções
             const defaultTasks = [
                 { id: 1, title: 'Pesquisa e Referências', done: false },
                 { id: 2, title: 'Comprar Insumos Específicos', done: false },
@@ -399,7 +425,6 @@
             const [newPieceName, setNewPieceName] = useState('');
             const [newTaskName, setNewTaskName] = useState('');
 
-            // Busca de dados em tempo real
             useEffect(() => {
                 if (!user) return;
                 const { collection, onSnapshot } = window.fbMethods;
@@ -431,81 +456,52 @@
                 return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); unsubCollections(); };
             }, [user]);
 
-            // --- CÁLCULOS FINANCEIROS ---
             const deliveredOrders = orders.filter(o => o.status === 'Entregue');
             const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
             const totalCost = deliveredOrders.reduce((sum, o) => sum + (Number(o.cost) || 0), 0);
             const totalProfit = totalRevenue - totalCost;
 
-            // --- FUNÇÕES DE INSUMOS ---
-            const getSupplyStatus = (qty, threshold) => {
-                if (qty <= 0) return 'critico';
-                if (qty <= threshold) return 'atencao';
-                return 'ok';
-            };
-
-            const handleAddSupply = async (e) => {
-                e.preventDefault();
-                if (!newSupName) return;
-                const qty = Number(newSupQty) || 0;
-                const threshold = Number(newSupThreshold) || 0;
-                
-                const { addDoc, collection } = window.fbMethods;
-                await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies'), {
-                    name: newSupName, 
-                    qty: qty, 
-                    unit: newSupUnit,
-                    threshold: threshold,
-                    status: getSupplyStatus(qty, threshold)
-                });
-                setNewSupName(''); setNewSupQty(''); setNewSupThreshold('');
-            };
-
-            const handleSaveSupplyQty = async (id, threshold) => {
-                const newQty = Number(editingSupQty) || 0;
-                const newStatus = getSupplyStatus(newQty, threshold);
-                
-                const { updateDoc, doc } = window.fbMethods;
-                await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id), {
-                    qty: newQty, status: newStatus
-                });
-                setEditingSupId(null);
-            };
-
-            const handleDeleteSupply = async (id) => {
-                if(!confirm("Deletar insumo permanentemente?")) return;
-                const { deleteDoc, doc } = window.fbMethods;
-                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id));
-            };
-
-            // --- FUNÇÕES DE ESTOQUE/OBRAS ---
+            // --- FUNÇÕES DE ESTOQUE/OBRAS (MÚLTIPLAS IMAGENS) ---
             const handleAddArtwork = async (e) => {
                 e.preventDefault();
                 const { addDoc, updateDoc, doc, collection } = window.fbMethods;
                 
+                // Pré-processa as imagens convertendo os links do Drive
+                const processedImages = (artForm.images || []).map(parseDriveUrl).filter(url => url.trim() !== '');
+                const mainImage = processedImages.length > 0 ? processedImages[0] : ''; // Fallback de segurança
+
+                const finalData = {
+                    ...artForm,
+                    images: processedImages,
+                    image: mainImage 
+                };
+
                 if (editingArtworkId) {
-                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', editingArtworkId), {
-                        ...artForm
-                    });
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', editingArtworkId), finalData);
                     setEditingArtworkId(null);
                     alert("Obra atualizada com sucesso!");
                 } else {
                     await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), {
-                        ...artForm, createdAt: new Date().toISOString()
+                        ...finalData, createdAt: new Date().toISOString()
                     });
                     alert("Obra adicionada ao site!");
                 }
-                setArtForm({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+                setArtForm({ name: '', desc: '', price: '', images: ['', '', '', ''], category: 'Cerâmica / Biscuit' });
             };
 
             const handleEditArtwork = (art) => {
-                setArtForm({ name: art.name, desc: art.desc, price: art.price, image: art.image, category: art.category });
+                // Recupera as imagens ou preenche até 4 espaços vazios
+                const currentImages = art.images && art.images.length > 0 ? art.images : (art.image ? [art.image] : []);
+                const filledImages = [...currentImages];
+                while(filledImages.length < 4) filledImages.push('');
+
+                setArtForm({ name: art.name, desc: art.desc, price: art.price, images: filledImages, category: art.category });
                 setEditingArtworkId(art.id);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             const cancelEditArtwork = () => {
-                setArtForm({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+                setArtForm({ name: '', desc: '', price: '', images: ['', '', '', ''], category: 'Cerâmica / Biscuit' });
                 setEditingArtworkId(null);
             };
 
@@ -515,207 +511,29 @@
                 await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', id));
             };
 
-            // --- FUNÇÕES DE ENCOMENDAS ---
-            const openOrderModal = (order = null) => {
-                if (order) {
-                    setEditingOrder(order.id);
-                    setOrderForm({ ...order, price: order.price || '', cost: order.cost || '' });
-                } else {
-                    setEditingOrder(null);
-                    setOrderForm({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' });
-                }
-                setIsOrderModalOpen(true);
-            };
-
-            const handleSaveOrder = async (e) => {
-                e.preventDefault();
-                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
-                
-                const finalOrderData = {
-                    ...orderForm,
-                    price: Number(orderForm.price) || 0,
-                    cost: Number(orderForm.cost) || 0
-                };
-
-                if (editingOrder) {
-                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', editingOrder), finalOrderData);
-                } else {
-                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), {
-                        ...finalOrderData, createdAt: new Date().toISOString()
-                    });
-                }
-                setIsOrderModalOpen(false);
-            };
-
-            const handleAdvanceOrder = async (id, currentStatus) => {
-                const nextStatus = currentStatus === 'Novo' ? 'Produção' : currentStatus === 'Produção' ? 'Pronto' : 'Entregue';
-                if (currentStatus === 'Entregue') return;
-                const { updateDoc, doc } = window.fbMethods;
-                await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id), { status: nextStatus });
-            };
-
-            const handleDeleteOrder = async (id) => {
-                if(!confirm("Excluir esta encomenda permanentemente?")) return;
-                const { deleteDoc, doc } = window.fbMethods;
-                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id));
-            };
-
-            // --- FUNÇÕES DE COLEÇÕES ---
-            const openColModal = (col = null) => {
-                if (col) {
-                    setEditingColId(col.id);
-                    setColForm({ ...col });
-                } else {
-                    setEditingColId(null);
-                    setColForm({ name: '', theme: '', status: 'Ideação', targetDate: '', pieces: [], tasks: defaultTasks });
-                }
-                setNewPieceName('');
-                setNewTaskName('');
-                setIsColModalOpen(true);
-            };
-
-            const handleAddPiece = () => {
-                if (!newPieceName) return;
-                setColForm({
-                    ...colForm, 
-                    pieces: [...colForm.pieces, { id: Date.now(), name: newPieceName, done: false }]
-                });
-                setNewPieceName('');
-            };
-
-            const handleAddTask = () => {
-                if (!newTaskName) return;
-                setColForm({
-                    ...colForm, 
-                    tasks: [...colForm.tasks, { id: Date.now(), title: newTaskName, done: false }]
-                });
-                setNewTaskName('');
-            };
-
-            const togglePiece = (pId) => {
-                setColForm({...colForm, pieces: colForm.pieces.map(p => p.id === pId ? {...p, done: !p.done} : p)});
-            };
-
-            const toggleTask = (tId) => {
-                setColForm({...colForm, tasks: colForm.tasks.map(t => t.id === tId ? {...t, done: !t.done} : t)});
-            };
-
-            const deletePiece = (pId) => {
-                setColForm({...colForm, pieces: colForm.pieces.filter(p => p.id !== pId)});
-            };
-            
-            const deleteTask = (tId) => {
-                setColForm({...colForm, tasks: colForm.tasks.filter(t => t.id !== tId)});
-            };
-
-            const handleSaveCollection = async (e) => {
-                e.preventDefault();
-                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
-                
-                if (editingColId) {
-                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', editingColId), colForm);
-                } else {
-                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections'), {
-                        ...colForm, createdAt: new Date().toISOString()
-                    });
-                }
-                setIsColModalOpen(false);
-            };
-
-            const handleDeleteCollection = async (id) => {
-                if(!confirm("Excluir esta coleção inteira permanentemente?")) return;
-                const { deleteDoc, doc } = window.fbMethods;
-                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', id));
-            };
-
-            // --- RENDERIZADORES ---
-            const renderAgenda = () => {
-                const upcoming = orders.filter(o => o.deadline && o.status !== 'Entregue');
-                
-                const grouped = upcoming.reduce((acc, order) => {
-                    const date = new Date(order.deadline + 'T12:00:00');
-                    const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                    if (!acc[monthYear]) acc[monthYear] = [];
-                    acc[monthYear].push(order);
-                    return acc;
-                }, {});
-
-                const sortedMonths = Object.keys(grouped).sort((a, b) => {
-                    return new Date(grouped[a][0].deadline) - new Date(grouped[b][0].deadline);
-                });
-
-                if (sortedMonths.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhum prazo definido no calendário para encomendas ativas.</p>;
-
-                return (
-                    <div className="mt-8 space-y-8">
-                        {sortedMonths.map(month => (
-                            <div key={month} className="relative pl-6 border-l-2 border-ouro/30">
-                                <div className="absolute w-3 h-3 bg-ouro rounded-full -left-[7px] top-1"></div>
-                                <h3 className="text-lg font-serif text-ouro capitalize mb-4">{month}</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {grouped[month].sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).map(order => (
-                                        <div key={order.id} className="bg-admincard border border-gray-700 p-4 rounded-lg shadow-lg">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <span className="text-xs text-ouro font-bold uppercase tracking-widest block">{new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>
-                                                    <h4 className="font-medium text-white">{order.client}</h4>
-                                                </div>
-                                                <span className={`text-[10px] px-2 py-1 rounded ${order.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-blue-900/50 text-blue-400'}`}>{order.status}</span>
-                                            </div>
-                                            <p className="text-xs text-gray-400 truncate">{order.item}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                );
-            };
-
-            const renderHistory = () => {
-                if (deliveredOrders.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhuma peça foi finalizada e entregue ainda.</p>;
-
-                return (
-                    <div className="mt-8">
-                        <div className="bg-admincard rounded-xl border border-gray-800 overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-gray-800/50 text-gray-400">
-                                    <tr>
-                                        <th className="p-4 font-normal">Cliente / Peça</th>
-                                        <th className="p-4 font-normal">Data Finalização</th>
-                                        <th className="p-4 font-normal">Valor</th>
-                                        <th className="p-4 font-normal text-green-400">Lucro</th>
-                                        <th className="p-4 font-normal text-right">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {deliveredOrders.map(order => (
-                                        <tr key={order.id} className="border-t border-gray-800 hover:bg-gray-800/20">
-                                            <td className="p-4">
-                                                <div className="font-medium text-white">{order.client}</div>
-                                                <div className="text-xs text-gray-500">{order.item}</div>
-                                            </td>
-                                            <td className="p-4 text-gray-400 text-xs">
-                                                {order.deadline ? new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR') : 'Data não definida'}
-                                            </td>
-                                            <td className="p-4 text-white">R$ {Number(order.price || 0).toFixed(2)}</td>
-                                            <td className="p-4 text-green-400 font-bold">R$ {(Number(order.price || 0) - Number(order.cost || 0)).toFixed(2)}</td>
-                                            <td className="p-4 text-right">
-                                                <button onClick={() => handleDeleteOrder(order.id)} className="text-xs text-red-500 hover:text-white px-2 py-1 rounded border border-red-900/50 hover:bg-red-900/50" title="Excluir Histórico">Excluir</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                );
-            };
+            // (OUTRAS FUNÇÕES MANTIDAS: Insumos, Encomendas, Coleções)
+            const getSupplyStatus = (qty, threshold) => { if (qty <= 0) return 'critico'; if (qty <= threshold) return 'atencao'; return 'ok'; };
+            const handleAddSupply = async (e) => { e.preventDefault(); if (!newSupName) return; const qty = Number(newSupQty) || 0; const threshold = Number(newSupThreshold) || 0; await window.fbMethods.addDoc(window.fbMethods.collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies'), { name: newSupName, qty: qty, unit: newSupUnit, threshold: threshold, status: getSupplyStatus(qty, threshold) }); setNewSupName(''); setNewSupQty(''); setNewSupThreshold(''); };
+            const handleSaveSupplyQty = async (id, threshold) => { const newQty = Number(editingSupQty) || 0; await window.fbMethods.updateDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id), { qty: newQty, status: getSupplyStatus(newQty, threshold) }); setEditingSupId(null); };
+            const handleDeleteSupply = async (id) => { if(!confirm("Deletar insumo permanentemente?")) return; await window.fbMethods.deleteDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id)); };
+            const openOrderModal = (order = null) => { if (order) { setEditingOrder(order.id); setOrderForm({ ...order, price: order.price || '', cost: order.cost || '' }); } else { setEditingOrder(null); setOrderForm({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' }); } setIsOrderModalOpen(true); };
+            const handleSaveOrder = async (e) => { e.preventDefault(); const finalOrderData = { ...orderForm, price: Number(orderForm.price) || 0, cost: Number(orderForm.cost) || 0 }; if (editingOrder) { await window.fbMethods.updateDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', editingOrder), finalOrderData); } else { await window.fbMethods.addDoc(window.fbMethods.collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), { ...finalOrderData, createdAt: new Date().toISOString() }); } setIsOrderModalOpen(false); };
+            const handleAdvanceOrder = async (id, currentStatus) => { const nextStatus = currentStatus === 'Novo' ? 'Produção' : currentStatus === 'Produção' ? 'Pronto' : 'Entregue'; if (currentStatus === 'Entregue') return; await window.fbMethods.updateDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id), { status: nextStatus }); };
+            const handleDeleteOrder = async (id) => { if(!confirm("Excluir esta encomenda permanentemente?")) return; await window.fbMethods.deleteDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id)); };
+            const openColModal = (col = null) => { if (col) { setEditingColId(col.id); setColForm({ ...col }); } else { setEditingColId(null); setColForm({ name: '', theme: '', status: 'Ideação', targetDate: '', pieces: [], tasks: defaultTasks }); } setNewPieceName(''); setNewTaskName(''); setIsColModalOpen(true); };
+            const handleAddPiece = () => { if (!newPieceName) return; setColForm({ ...colForm, pieces: [...colForm.pieces, { id: Date.now(), name: newPieceName, done: false }] }); setNewPieceName(''); };
+            const handleAddTask = () => { if (!newTaskName) return; setColForm({ ...colForm, tasks: [...colForm.tasks, { id: Date.now(), title: newTaskName, done: false }] }); setNewTaskName(''); };
+            const togglePiece = (pId) => { setColForm({...colForm, pieces: colForm.pieces.map(p => p.id === pId ? {...p, done: !p.done} : p)}); };
+            const toggleTask = (tId) => { setColForm({...colForm, tasks: colForm.tasks.map(t => t.id === tId ? {...t, done: !t.done} : t)}); };
+            const deletePiece = (pId) => { setColForm({...colForm, pieces: colForm.pieces.filter(p => p.id !== pId)}); };
+            const deleteTask = (tId) => { setColForm({...colForm, tasks: colForm.tasks.filter(t => t.id !== tId)}); };
+            const handleSaveCollection = async (e) => { e.preventDefault(); if (editingColId) { await window.fbMethods.updateDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', editingColId), colForm); } else { await window.fbMethods.addDoc(window.fbMethods.collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections'), { ...colForm, createdAt: new Date().toISOString() }); } setIsColModalOpen(false); };
+            const handleDeleteCollection = async (id) => { if(!confirm("Excluir esta coleção inteira permanentemente?")) return; await window.fbMethods.deleteDoc(window.fbMethods.doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', id)); };
 
             return (
                 <div className="min-h-screen bg-adminbg text-texto font-sans flex flex-col md:flex-row relative">
                     
-                    {/* MODAL DE ENCOMENDAS */}
+                    {/* MODAL DE ENCOMENDAS (Mantido igual) */}
                     {isOrderModalOpen && (
                         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
                             <div className="bg-admincard p-6 rounded-2xl w-full max-w-2xl border border-ouro/30 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -769,7 +587,7 @@
                         </div>
                     )}
 
-                    {/* MODAL DE COLEÇÕES */}
+                    {/* MODAL DE COLEÇÕES (Mantido igual) */}
                     {isColModalOpen && (
                         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
                             <div className="bg-admincard p-6 rounded-2xl w-full max-w-4xl border border-ouro/30 shadow-2xl overflow-y-auto max-h-[95vh] flex flex-col">
@@ -911,7 +729,72 @@
                                 <div className="pt-6 border-t border-gray-800">
                                     <h2 className="text-2xl font-serif text-white mb-2">Calendário de Entregas</h2>
                                     <p className="text-sm text-gray-400">Suas encomendas ativas e em produção, organizadas pela data limite.</p>
-                                    {renderAgenda()}
+                                    <div className="mt-8 space-y-8">
+                                        {Object.keys(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})).sort((a, b) => new Date(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})[a][0].deadline) - new Date(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})[b][0].deadline)).length === 0 ? <p className="text-gray-500 text-sm mt-4">Nenhum prazo definido no calendário para encomendas ativas.</p> :
+                                        
+                                        Object.keys(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})).sort((a, b) => new Date(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})[a][0].deadline) - new Date(orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                            const date = new Date(order.deadline + 'T12:00:00');
+                                            const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                            if (!acc[monthYear]) acc[monthYear] = [];
+                                            acc[monthYear].push(order);
+                                            return acc;
+                                        }, {})[b][0].deadline)).map(month => (
+                                            <div key={month} className="relative pl-6 border-l-2 border-ouro/30">
+                                                <div className="absolute w-3 h-3 bg-ouro rounded-full -left-[7px] top-1"></div>
+                                                <h3 className="text-lg font-serif text-ouro capitalize mb-4">{month}</h3>
+                                                <div className="grid md:grid-cols-2 gap-4">
+                                                    {orders.filter(o => o.deadline && o.status !== 'Entregue').reduce((acc, order) => {
+                                                        const date = new Date(order.deadline + 'T12:00:00');
+                                                        const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                                                        if (!acc[monthYear]) acc[monthYear] = [];
+                                                        acc[monthYear].push(order);
+                                                        return acc;
+                                                    }, {})[month].sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).map(order => (
+                                                        <div key={order.id} className="bg-admincard border border-gray-700 p-4 rounded-lg shadow-lg">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div>
+                                                                    <span className="text-xs text-ouro font-bold uppercase tracking-widest block">{new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>
+                                                                    <h4 className="font-medium text-white">{order.client}</h4>
+                                                                </div>
+                                                                <span className={`text-[10px] px-2 py-1 rounded ${order.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-blue-900/50 text-blue-400'}`}>{order.status}</span>
+                                                            </div>
+                                                            <p className="text-xs text-gray-400 truncate">{order.item}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="pt-6 border-t border-gray-800">
@@ -919,7 +802,41 @@
                                         Histórico de Vendas <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded-full font-sans">{deliveredOrders.length} itens</span>
                                     </h2>
                                     <p className="text-sm text-gray-400">Tudo o que já foi marcado como 'Entregue' vem para cá.</p>
-                                    {renderHistory()}
+                                    {deliveredOrders.length === 0 ? <p className="text-gray-500 text-sm mt-4">Nenhuma peça foi finalizada e entregue ainda.</p> :
+                                    <div className="mt-8">
+                                        <div className="bg-admincard rounded-xl border border-gray-800 overflow-hidden">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-gray-800/50 text-gray-400">
+                                                    <tr>
+                                                        <th className="p-4 font-normal">Cliente / Peça</th>
+                                                        <th className="p-4 font-normal">Data Finalização</th>
+                                                        <th className="p-4 font-normal">Valor</th>
+                                                        <th className="p-4 font-normal text-green-400">Lucro</th>
+                                                        <th className="p-4 font-normal text-right">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {deliveredOrders.map(order => (
+                                                        <tr key={order.id} className="border-t border-gray-800 hover:bg-gray-800/20">
+                                                            <td className="p-4">
+                                                                <div className="font-medium text-white">{order.client}</div>
+                                                                <div className="text-xs text-gray-500">{order.item}</div>
+                                                            </td>
+                                                            <td className="p-4 text-gray-400 text-xs">
+                                                                {order.deadline ? new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR') : 'Data não definida'}
+                                                            </td>
+                                                            <td className="p-4 text-white">R$ {Number(order.price || 0).toFixed(2)}</td>
+                                                            <td className="p-4 text-green-400 font-bold">R$ {(Number(order.price || 0) - Number(order.cost || 0)).toFixed(2)}</td>
+                                                            <td className="p-4 text-right">
+                                                                <button onClick={() => handleDeleteOrder(order.id)} className="text-xs text-red-500 hover:text-white px-2 py-1 rounded border border-red-900/50 hover:bg-red-900/50" title="Excluir Histórico">Excluir</button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    }
                                 </div>
                             </div>
                         )}
@@ -1079,7 +996,6 @@
                                                 </div>
                                             </div>
                                             
-                                            {/* SISTEMA DE EDIÇÃO DE QUANTIDADE */}
                                             <div className="flex items-center gap-3">
                                                 {editingSupId === sup.id ? (
                                                     <div className="flex items-center gap-2 bg-gray-800 p-1 rounded-lg">
@@ -1115,24 +1031,40 @@
                                         <label className="block text-xs text-gray-400 uppercase mb-1">Nome da Obra</label>
                                         <input type="text" className="admin-input" required value={artForm.name} onChange={e => setArtForm({...artForm, name: e.target.value})} />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-400 uppercase mb-1">Preço (Ex: 40,00)</label>
-                                        <input type="text" className="admin-input" required value={artForm.price} onChange={e => setArtForm({...artForm, price: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Preço (Ex: 40,00)</label>
+                                            <input type="text" className="admin-input" required value={artForm.price} onChange={e => setArtForm({...artForm, price: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Categoria</label>
+                                            <select className="admin-input" value={artForm.category} onChange={e => setArtForm({...artForm, category: e.target.value})}>
+                                                <option>Cerâmica / Biscuit</option>
+                                                <option>Pintura / Ilustração</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-400 uppercase mb-1">Categoria (Onde vai aparecer)</label>
-                                        <select className="admin-input" value={artForm.category} onChange={e => setArtForm({...artForm, category: e.target.value})}>
-                                            <option>Cerâmica / Biscuit</option>
-                                            <option>Pintura / Ilustração</option>
-                                        </select>
+                                    
+                                    <div className="md:col-span-2 border border-gray-700 p-4 rounded-xl bg-gray-800/30 mt-2">
+                                        <label className="block text-xs text-ouro uppercase mb-3 font-bold">Imagens da Obra (Até 4 fotos)</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {[0, 1, 2, 3].map(idx => (
+                                                <div key={idx}>
+                                                    <label className="block text-[10px] text-gray-400 uppercase mb-1">Imagem {idx + 1} {idx === 0 ? '(Principal)' : ''}</label>
+                                                    <input type="url" className="admin-input" required={idx === 0 && !editingArtworkId} value={(artForm.images || [])[idx] || ''} onChange={e => {
+                                                        const newImages = [...(artForm.images || ['', '', '', ''])];
+                                                        newImages[idx] = e.target.value;
+                                                        setArtForm({...artForm, images: newImages});
+                                                    }} placeholder="URL do Google Drive, Canva, etc..." />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 mt-3 font-medium">✨ Cole o link inteiro de compartilhamento do Google Drive que o sistema adapta automaticamente.</p>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-400 uppercase mb-1">Link da Imagem (Ex: URL do Canva ou Unsplash)</label>
-                                        <input type="url" className="admin-input" required value={artForm.image} onChange={e => setArtForm({...artForm, image: e.target.value})} />
-                                    </div>
+
                                     <div className="md:col-span-2">
                                         <label className="block text-xs text-gray-400 uppercase mb-1">Descrição</label>
-                                        <textarea className="admin-input" required value={artForm.desc} onChange={e => setArtForm({...artForm, desc: e.target.value})}></textarea>
+                                        <textarea className="admin-input h-20" required value={artForm.desc} onChange={e => setArtForm({...artForm, desc: e.target.value})}></textarea>
                                     </div>
                                     <div className="md:col-span-2 flex gap-2 mt-2">
                                         <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-3 rounded-lg hover:bg-ouroclaro flex-1 transition">
@@ -1147,24 +1079,34 @@
                                 </form>
 
                                 <div className="grid md:grid-cols-3 gap-6 pt-4">
-                                    {artworks.map(art => (
-                                        <div key={art.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg group flex flex-col">
-                                            <div className="aspect-square bg-gray-900 relative">
-                                                <img src={art.image} className="w-full h-full object-cover opacity-80" />
-                                                <span className="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded uppercase tracking-widest">{art.category.split('/')[0]}</span>
-                                            </div>
-                                            <div className="p-4 flex flex-col gap-2 flex-1">
-                                                <div>
-                                                    <h4 className="font-serif text-lg text-ouro truncate" title={art.name}>{art.name}</h4>
-                                                    <p className="text-sm text-white font-bold mb-2">R$ {art.price}</p>
+                                    {artworks.map(art => {
+                                        const displayImage = art.images && art.images.length > 0 ? art.images[0] : art.image;
+                                        return (
+                                            <div key={art.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg group flex flex-col">
+                                                <div className="aspect-square bg-gray-900 relative">
+                                                    {displayImage ? (
+                                                        <img src={displayImage} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">Sem imagem</div>
+                                                    )}
+                                                    <span className="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded uppercase tracking-widest">{art.category.split('/')[0]}</span>
+                                                    {art.images && art.images.length > 1 && (
+                                                        <span className="absolute bottom-2 left-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded font-bold tracking-widest">+ {art.images.filter(i=>i).length - 1} FOTOS</span>
+                                                    )}
                                                 </div>
-                                                <div className="flex gap-2 mt-auto pt-2">
-                                                    <button onClick={() => handleEditArtwork(art)} className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-gray-700 text-xs font-bold uppercase transition">Editar</button>
-                                                    <button onClick={() => handleDeleteArtwork(art.id)} className="flex-1 py-2 border border-red-900/50 text-red-400 rounded hover:bg-red-900/30 text-xs font-bold uppercase transition">Excluir</button>
+                                                <div className="p-4 flex flex-col gap-2 flex-1">
+                                                    <div>
+                                                        <h4 className="font-serif text-lg text-ouro truncate" title={art.name}>{art.name}</h4>
+                                                        <p className="text-sm text-white font-bold mb-2">R$ {art.price}</p>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-auto pt-2">
+                                                        <button onClick={() => handleEditArtwork(art)} className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-gray-700 text-xs font-bold uppercase transition">Editar</button>
+                                                        <button onClick={() => handleDeleteArtwork(art.id)} className="flex-1 py-2 border border-red-900/50 text-red-400 rounded hover:bg-red-900/30 text-xs font-bold uppercase transition">Excluir</button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}
