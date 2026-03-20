@@ -157,7 +157,7 @@
             const [isSubmitting, setIsSubmitting] = useState(false);
             
             const [artworks, setArtworks] = useState([]);
-            const [patterns, setPatterns] = useState([]); // Estampas
+            const [patterns, setPatterns] = useState([]); 
 
             useEffect(() => {
                 if (!window.fbMethods) return;
@@ -217,10 +217,20 @@
                 setOrderForm({...orderForm, type: type, idea: customIdea});
             };
 
-            // COMPONENTE: Card de Obra com Carrossel de Imagens
+            // COMPONENTE: Card de Obra com Carrossel de Imagens Aprimorado
             const ArtworkCard = ({ art }) => {
                 const [activeImg, setActiveImg] = useState(0);
                 const images = art.images && art.images.length > 0 ? art.images : (art.image ? [art.image] : []);
+
+                const nextImg = (e) => {
+                    e.stopPropagation();
+                    setActiveImg((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+                };
+
+                const prevImg = (e) => {
+                    e.stopPropagation();
+                    setActiveImg((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+                };
 
                 return (
                     <div className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
@@ -231,12 +241,24 @@
                                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic font-sans">Sem Imagem</div>
                             )}
                             
+                            {/* SETAS DE NAVEGAÇÃO PARA CARROSSEL */}
                             {images.length > 1 && (
-                                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
+                                <>
+                                    <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white rounded-full z-20 backdrop-blur-sm transition-all" aria-label="Foto anterior">
+                                        <svg className="w-5 h-5 pr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                                    </button>
+                                    <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white rounded-full z-20 backdrop-blur-sm transition-all" aria-label="Próxima foto">
+                                        <svg className="w-5 h-5 pl-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                    </button>
+                                </>
+                            )}
+                            
+                            {/* NAVEGAÇÃO DE BOLINHAS (VISUAL APENAS) */}
+                            {images.length > 1 && (
+                                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
                                     {images.map((_, idx) => (
-                                        <button key={idx} onClick={(e) => { e.stopPropagation(); setActiveImg(idx); }} 
-                                                className={`w-2 h-2 rounded-full transition-all ${activeImg === idx ? 'bg-ouro scale-125' : 'bg-white/50 hover:bg-white'}`}>
-                                        </button>
+                                        <div key={idx} className={`w-2 h-2 rounded-full transition-all ${activeImg === idx ? 'bg-ouro scale-125 shadow-[0_0_5px_#dca868]' : 'bg-white/50'}`}>
+                                        </div>
                                     ))}
                                 </div>
                             )}
@@ -353,11 +375,11 @@
                         </button>
                     </nav>
 
-                    <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 pt-32 md:pt-12 fade-in">
+                    <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 pt-8 md:pt-12 fade-in">
                         {section === 'inicio' && (
-                            <div className="space-y-24">
-                                <header className="text-center space-y-8 pt-8">
-                                    <div className="flex justify-center mb-10"><LogoOficina size={180} /></div>
+                            <div className="space-y-16 md:space-y-24">
+                                <header className="text-center space-y-4 md:space-y-8 pt-4 md:pt-8">
+                                    <div className="flex justify-center mb-6 md:mb-10"><LogoOficina size={180} /></div>
                                     <h1 className="font-serif text-4xl md:text-7xl font-bold tracking-tighter block leading-none text-ouro">Arte Feita à Mão com Alma e Magia</h1>
                                     <h2 className="font-serif text-xl md:text-2xl text-slate-300 block">Bem-vindo(a) à Oficina da Lua!</h2>
                                     <p className="font-sans text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed block font-light">O meu trabalho é um mergulho nos mundos do desenho, da pintura e da cerâmica, criando peças únicas que levam mais cor e afeto para o seu quotidiano.</p>
@@ -533,8 +555,7 @@
                                 <div className="text-center space-y-6 pt-16 border-t border-ouro/20">
                                     <h3 className="font-serif text-4xl font-bold text-ouro">Crie um caderno com a sua cara</h3>
                                     <p className="text-slate-300 font-light text-lg max-w-2xl mx-auto leading-relaxed">
-                                        A parte mais divertida! Escolha uma das estampas disponíveis abaixo para a sua capa. Todas são de tecido tricoline 100% algodão, aplicadas com muito cuidado para um acabamento perfeito.<br/><br/>
-                                        <span className="text-sm italic text-gray-400">(Também faço capas personalizadas com artes e de outros estilos, mas o pedido é feito via orçamento e os preços podem variar.)</span>
+                                        A parte mais divertida! Escolha uma das estampas disponíveis abaixo para a sua capa. Todas são de tecido tricoline 100% algodão, aplicadas com muito cuidado para um acabamento perfeito.
                                     </p>
                                 </div>
 
@@ -562,6 +583,19 @@
                                             </div>
                                         ))
                                     )}
+                                </div>
+
+                                <div className="text-center space-y-6 pt-16 border-t border-ouro/20">
+                                    <h3 className="font-serif text-3xl font-bold text-ouro">Capas Personalizadas</h3>
+                                    <p className="text-slate-300 font-light text-lg max-w-2xl mx-auto leading-relaxed">
+                                        Não encontrou a estampa perfeita ou quer algo único? Também faço capas personalizadas com artes exclusivas e de outros estilos. O pedido é feito via orçamento e os valores podem variar conforme a complexidade.
+                                    </p>
+                                    <div className="pt-4">
+                                        <button onClick={() => handleOrderClick('Caderno Artesanal Personalizado', 'Olá Tay! Gostaria de fazer um orçamento para um caderno com capa personalizada/arte exclusiva.')} 
+                                                className="font-sans text-xs uppercase tracking-[0.2em] font-bold border border-ouro/50 bg-ouro/10 py-4 px-8 rounded-xl text-ouro hover:bg-ouro hover:text-fundo transition-all shadow-[0_0_15px_rgba(220,168,104,0.2)]">
+                                            Pedir Caderno Personalizado
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1494,7 +1528,7 @@
                     await window.fbMethods.signInWithEmailAndPassword(window.fbAuth, email, password);
                     setView('admin');
                 } catch (error) {
-                    alert("Acesso Negado. Verifique o email e senha cadastrados no Firebase.");
+                    alert("Acesso Negado. Verifique o email e a senha cadastrados no Firebase.");
                 }
             };
 
