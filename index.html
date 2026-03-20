@@ -143,7 +143,6 @@
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [artworks, setArtworks] = useState([]);
 
-            // Busca as obras do Estoque no Firebase para exibir no site
             useEffect(() => {
                 if (!window.fbMethods) return;
                 const { collection, onSnapshot } = window.fbMethods;
@@ -170,7 +169,9 @@
                         item: orderForm.type,
                         idea: orderForm.idea,
                         status: 'Novo',
-                        deadline: '', // Prazo em branco para a Tay definir no Admin
+                        deadline: '',
+                        price: 0,
+                        cost: 0,
                         createdAt: new Date().toISOString()
                     });
 
@@ -366,14 +367,20 @@
             // Estado Form Insumos
             const [newSupName, setNewSupName] = useState('');
             const [newSupQty, setNewSupQty] = useState('');
+            const [newSupUnit, setNewSupUnit] = useState('g');
+            const [newSupThreshold, setNewSupThreshold] = useState('');
             
+            // Estado Edição Rápida Insumos
+            const [editingSupId, setEditingSupId] = useState(null);
+            const [editingSupQty, setEditingSupQty] = useState('');
+
             // Estado Form Obras (Estoque)
             const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
 
-            // Estado Modal Encomenda (Adicionar / Editar)
+            // Estado Modal Encomenda
             const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-            const [editingOrder, setEditingOrder] = useState(null); // null = Nova, Object = Editando
-            const [orderForm, setOrderForm] = useState({ client: '', item: '', idea: '', status: 'Novo', deadline: '' });
+            const [editingOrder, setEditingOrder] = useState(null);
+            const [orderForm, setOrderForm] = useState({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' });
 
             // Busca de dados em tempo real
             useEffect(() => {
@@ -399,24 +406,45 @@
                 return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); };
             }, [user]);
 
+            // --- CÁLCULOS FINANCEIROS ---
+            const deliveredOrders = orders.filter(o => o.status === 'Entregue');
+            const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const totalCost = deliveredOrders.reduce((sum, o) => sum + (Number(o.cost) || 0), 0);
+            const totalProfit = totalRevenue - totalCost;
+
             // --- FUNÇÕES DE INSUMOS ---
+            const getSupplyStatus = (qty, threshold) => {
+                if (qty <= 0) return 'critico';
+                if (qty <= threshold) return 'atencao';
+                return 'ok';
+            };
+
             const handleAddSupply = async (e) => {
                 e.preventDefault();
                 if (!newSupName) return;
+                const qty = Number(newSupQty) || 0;
+                const threshold = Number(newSupThreshold) || 0;
+                
                 const { addDoc, collection } = window.fbMethods;
                 await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies'), {
-                    name: newSupName, qty: Number(newSupQty) || 0, status: 'ok'
+                    name: newSupName, 
+                    qty: qty, 
+                    unit: newSupUnit,
+                    threshold: threshold,
+                    status: getSupplyStatus(qty, threshold)
                 });
-                setNewSupName(''); setNewSupQty('');
+                setNewSupName(''); setNewSupQty(''); setNewSupThreshold('');
             };
 
-            const handleUpdateSupplyQty = async (id, currentQty, change) => {
-                const newQty = Math.max(0, currentQty + change);
-                let newStatus = newQty === 0 ? 'critico' : newQty <= 3 ? 'atencao' : 'ok';
+            const handleSaveSupplyQty = async (id, threshold) => {
+                const newQty = Number(editingSupQty) || 0;
+                const newStatus = getSupplyStatus(newQty, threshold);
+                
                 const { updateDoc, doc } = window.fbMethods;
                 await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id), {
                     qty: newQty, status: newStatus
                 });
+                setEditingSupId(null);
             };
 
             const handleDeleteSupply = async (id) => {
@@ -446,10 +474,10 @@
             const openOrderModal = (order = null) => {
                 if (order) {
                     setEditingOrder(order.id);
-                    setOrderForm({ ...order });
+                    setOrderForm({ ...order, price: order.price || '', cost: order.cost || '' });
                 } else {
                     setEditingOrder(null);
-                    setOrderForm({ client: '', item: '', idea: '', status: 'Novo', deadline: '' });
+                    setOrderForm({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' });
                 }
                 setIsOrderModalOpen(true);
             };
@@ -458,11 +486,17 @@
                 e.preventDefault();
                 const { addDoc, updateDoc, doc, collection } = window.fbMethods;
                 
+                const finalOrderData = {
+                    ...orderForm,
+                    price: Number(orderForm.price) || 0,
+                    cost: Number(orderForm.cost) || 0
+                };
+
                 if (editingOrder) {
-                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', editingOrder), { ...orderForm });
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', editingOrder), finalOrderData);
                 } else {
                     await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), {
-                        ...orderForm, createdAt: new Date().toISOString()
+                        ...finalOrderData, createdAt: new Date().toISOString()
                     });
                 }
                 setIsOrderModalOpen(false);
@@ -477,23 +511,18 @@
 
             // --- LÓGICA DO CALENDÁRIO / AGENDA ---
             const renderAgenda = () => {
-                // Filtra encomendas não entregues que têm prazo definido
                 const upcoming = orders.filter(o => o.deadline && o.status !== 'Entregue');
                 
-                // Agrupa por Mês/Ano
                 const grouped = upcoming.reduce((acc, order) => {
-                    const date = new Date(order.deadline + 'T12:00:00'); // Evitar fuso
+                    const date = new Date(order.deadline + 'T12:00:00');
                     const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
                     if (!acc[monthYear]) acc[monthYear] = [];
                     acc[monthYear].push(order);
                     return acc;
                 }, {});
 
-                // Ordena os meses
                 const sortedMonths = Object.keys(grouped).sort((a, b) => {
-                    const dateA = new Date(grouped[a][0].deadline);
-                    const dateB = new Date(grouped[b][0].deadline);
-                    return dateA - dateB;
+                    return new Date(grouped[a][0].deadline) - new Date(grouped[b][0].deadline);
                 });
 
                 if (sortedMonths.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhum prazo definido no calendário para encomendas ativas.</p>;
@@ -524,13 +553,50 @@
                 );
             };
 
+            // --- LÓGICA DO HISTÓRICO DE VENDAS ---
+            const renderHistory = () => {
+                if (deliveredOrders.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhuma peça foi finalizada e entregue ainda.</p>;
+
+                return (
+                    <div className="mt-8">
+                        <div className="bg-admincard rounded-xl border border-gray-800 overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-gray-800/50 text-gray-400">
+                                    <tr>
+                                        <th className="p-4 font-normal">Cliente / Peça</th>
+                                        <th className="p-4 font-normal">Data Finalização</th>
+                                        <th className="p-4 font-normal">Valor</th>
+                                        <th className="p-4 font-normal text-green-400">Lucro</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {deliveredOrders.map(order => (
+                                        <tr key={order.id} className="border-t border-gray-800 hover:bg-gray-800/20">
+                                            <td className="p-4">
+                                                <div className="font-medium text-white">{order.client}</div>
+                                                <div className="text-xs text-gray-500">{order.item}</div>
+                                            </td>
+                                            <td className="p-4 text-gray-400 text-xs">
+                                                {order.deadline ? new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR') : 'Data não definida'}
+                                            </td>
+                                            <td className="p-4 text-white">R$ {Number(order.price || 0).toFixed(2)}</td>
+                                            <td className="p-4 text-green-400 font-bold">R$ {(Number(order.price || 0) - Number(order.cost || 0)).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
             return (
                 <div className="min-h-screen bg-adminbg text-texto font-sans flex flex-col md:flex-row relative">
                     
                     {/* MODAL DE ENCOMENDAS */}
                     {isOrderModalOpen && (
                         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
-                            <div className="bg-admincard p-6 rounded-2xl w-full max-w-lg border border-ouro/30 shadow-2xl">
+                            <div className="bg-admincard p-6 rounded-2xl w-full max-w-2xl border border-ouro/30 shadow-2xl overflow-y-auto max-h-[90vh]">
                                 <h3 className="text-2xl font-serif text-ouro mb-4">{editingOrder ? 'Editar Encomenda' : 'Nova Encomenda'}</h3>
                                 <form onSubmit={handleSaveOrder} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
@@ -551,8 +617,21 @@
                                         <label className="block text-xs text-gray-400 uppercase mb-1">Ideia / Detalhes</label>
                                         <textarea className="admin-input h-20" required value={orderForm.idea} onChange={e => setOrderForm({...orderForm, idea: e.target.value})}></textarea>
                                     </div>
+                                    
+                                    {/* NOVOS CAMPOS FINANCEIROS */}
+                                    <div className="grid grid-cols-2 gap-4 border-t border-gray-700 pt-4 mt-2">
+                                        <div>
+                                            <label className="block text-xs text-ouro uppercase mb-1">Valor Cobrado (R$)</label>
+                                            <input type="number" step="0.01" className="admin-input" value={orderForm.price} onChange={e => setOrderForm({...orderForm, price: e.target.value})} placeholder="Ex: 150.00" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-red-400 uppercase mb-1">Custo Material (R$)</label>
+                                            <input type="number" step="0.01" className="admin-input" value={orderForm.cost} onChange={e => setOrderForm({...orderForm, cost: e.target.value})} placeholder="Ex: 30.00" />
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <label className="block text-xs text-gray-400 uppercase mb-1">Status Atual</label>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1 mt-2">Status Atual</label>
                                         <select className="admin-input" value={orderForm.status} onChange={e => setOrderForm({...orderForm, status: e.target.value})}>
                                             <option>Novo</option>
                                             <option>Produção</option>
@@ -577,9 +656,9 @@
                             </div>
                         </div>
                         <nav className="flex-1 p-4 space-y-2 text-sm">
-                            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📅 Agenda Anual & Geral</button>
+                            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📅 Visão Geral & Finanças</button>
                             <button onClick={() => setActiveTab('encomendas')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'encomendas' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
-                                📦 Encomendas {orders.length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{orders.filter(o => o.status === 'Novo').length}</span>}
+                                📦 Encomendas {orders.filter(o => o.status !== 'Entregue').length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{orders.filter(o => o.status !== 'Entregue').length}</span>}
                             </button>
                             <button onClick={() => setActiveTab('insumos')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'insumos' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🎨 Insumos</button>
                             <button onClick={() => setActiveTab('estoque')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'estoque' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Estoque Site Público</button>
@@ -595,26 +674,38 @@
                             <div className="space-y-10 fade-in">
                                 <div>
                                     <h2 className="text-2xl font-serif text-white mb-6">Resumo do Ateliê</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div className="bg-admincard p-6 rounded-xl border border-gray-800">
-                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Encomendas Ativas</h3>
-                                            <p className="text-3xl font-bold text-ouro">{orders.filter(o => o.status !== 'Entregue').length}</p>
+                                            <h3 className="text-gray-400 text-[10px] uppercase tracking-wider mb-2">Faturamento (Vendas Concluídas)</h3>
+                                            <p className="text-2xl font-bold text-white">R$ {totalRevenue.toFixed(2)}</p>
                                         </div>
                                         <div className="bg-admincard p-6 rounded-xl border border-gray-800">
-                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Obras no Site</h3>
-                                            <p className="text-3xl font-bold text-green-400">{artworks.length}</p>
+                                            <h3 className="text-gray-400 text-[10px] uppercase tracking-wider mb-2">Lucro Líquido Estimado</h3>
+                                            <p className="text-2xl font-bold text-green-400">R$ {totalProfit.toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-admincard p-6 rounded-xl border border-gray-800">
+                                            <h3 className="text-gray-400 text-[10px] uppercase tracking-wider mb-2">Obras à Venda (Site)</h3>
+                                            <p className="text-2xl font-bold text-ouro">{artworks.length}</p>
                                         </div>
                                         <div className="bg-admincard p-6 rounded-xl border border-red-900/30">
-                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Insumos em Falta/Atenção</h3>
-                                            <p className="text-3xl font-bold text-red-400">{supplies.filter(s => s.status !== 'ok').length}</p>
+                                            <h3 className="text-gray-400 text-[10px] uppercase tracking-wider mb-2">Alertas de Insumos</h3>
+                                            <p className="text-2xl font-bold text-red-400">{supplies.filter(s => s.status !== 'ok').length}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="pt-6 border-t border-gray-800">
                                     <h2 className="text-2xl font-serif text-white mb-2">Calendário de Entregas</h2>
-                                    <p className="text-sm text-gray-400">Visão de longo prazo das suas encomendas (organizadas por prazo).</p>
+                                    <p className="text-sm text-gray-400">Suas encomendas ativas e em produção, organizadas pela data limite.</p>
                                     {renderAgenda()}
+                                </div>
+
+                                <div className="pt-6 border-t border-gray-800">
+                                    <h2 className="text-2xl font-serif text-white mb-2 flex items-center gap-2">
+                                        Histórico de Vendas <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded-full font-sans">{deliveredOrders.length} itens</span>
+                                    </h2>
+                                    <p className="text-sm text-gray-400">Tudo o que já foi marcado como 'Entregue' vem para cá.</p>
+                                    {renderHistory()}
                                 </div>
                             </div>
                         )}
@@ -637,9 +728,9 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {orders.length === 0 ? (
-                                                <tr><td colSpan="5" className="p-8 text-center text-gray-500">Nenhuma encomenda ativa.</td></tr>
-                                            ) : orders.map(order => (
+                                            {orders.filter(o => o.status !== 'Entregue').length === 0 ? (
+                                                <tr><td colSpan="5" className="p-8 text-center text-gray-500">Nenhuma encomenda ativa na fila.</td></tr>
+                                            ) : orders.filter(o => o.status !== 'Entregue').map(order => (
                                                 <tr key={order.id} className="border-t border-gray-800 hover:bg-gray-800/20">
                                                     <td className="p-4 font-medium">{order.client}</td>
                                                     <td className="p-4">
@@ -654,16 +745,13 @@
                                                             ${order.status === 'Novo' ? 'bg-blue-900/50 text-blue-400' : ''}
                                                             ${order.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : ''}
                                                             ${order.status === 'Pronto' ? 'bg-green-900/50 text-green-400' : ''}
-                                                            ${order.status === 'Entregue' ? 'bg-gray-800 text-gray-500' : ''}
                                                         `}>
                                                             {order.status}
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-right space-x-2 flex justify-end">
                                                         <button onClick={() => openOrderModal(order)} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700 hover:bg-gray-700">Editar</button>
-                                                        {order.status !== 'Entregue' && (
-                                                            <button onClick={() => handleAdvanceOrder(order.id, order.status)} className="text-xs bg-ouro/10 text-ouro px-2 py-1 rounded border border-ouro/30 hover:bg-ouro/20">Avançar ❯</button>
-                                                        )}
+                                                        <button onClick={() => handleAdvanceOrder(order.id, order.status)} className="text-xs bg-ouro/10 text-ouro px-2 py-1 rounded border border-ouro/30 hover:bg-ouro/20">Avançar ❯</button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -677,44 +765,70 @@
                             <div className="space-y-6 fade-in">
                                 <h2 className="text-2xl font-serif text-white">Controle de Insumos</h2>
                                 
-                                <form onSubmit={handleAddSupply} className="bg-admincard p-4 rounded-xl border border-gray-800 flex flex-wrap gap-4 items-end">
-                                    <div className="flex-1 min-w-[200px]">
+                                <form onSubmit={handleAddSupply} className="bg-admincard p-6 rounded-xl border border-gray-800 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                                    <div className="md:col-span-2">
                                         <label className="text-xs text-gray-400 uppercase mb-1 block">Novo Material</label>
-                                        <input type="text" className="admin-input" value={newSupName} onChange={e => setNewSupName(e.target.value)} placeholder="Ex: Argila Branca 1kg" required />
+                                        <input type="text" className="admin-input" value={newSupName} onChange={e => setNewSupName(e.target.value)} placeholder="Ex: Argila Branca" required />
                                     </div>
-                                    <div className="w-24">
-                                        <label className="text-xs text-gray-400 uppercase mb-1 block">Qtd</label>
-                                        <input type="number" className="admin-input" value={newSupQty} onChange={e => setNewSupQty(e.target.value)} placeholder="0" />
+                                    <div>
+                                        <label className="text-xs text-gray-400 uppercase mb-1 block">Quantidade Atual</label>
+                                        <input type="number" className="admin-input" value={newSupQty} onChange={e => setNewSupQty(e.target.value)} placeholder="Ex: 1000" required />
                                     </div>
-                                    <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-2 rounded-lg text-sm hover:bg-ouroclaro h-[38px]">+ Adicionar</button>
+                                    <div>
+                                        <label className="text-xs text-gray-400 uppercase mb-1 block">Unidade</label>
+                                        <select className="admin-input" value={newSupUnit} onChange={e => setNewSupUnit(e.target.value)}>
+                                            <option value="g">Gramas (g)</option>
+                                            <option value="ml">Mililitros (ml)</option>
+                                            <option value="un">Unidades</option>
+                                            <option value="kg">Quilos (kg)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-400 uppercase mb-1 block text-[10px]">Avisar quando chegar em:</label>
+                                        <input type="number" className="admin-input" value={newSupThreshold} onChange={e => setNewSupThreshold(e.target.value)} placeholder="Ex: 200" required />
+                                    </div>
+                                    <div className="md:col-span-5 flex justify-end">
+                                        <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-2 rounded-lg text-sm hover:bg-ouroclaro">+ Adicionar Insumo</button>
+                                    </div>
                                 </form>
 
                                 <div className="grid gap-3">
                                     {supplies.length === 0 ? (
                                         <p className="text-gray-500 text-center py-4">Seu estoque de insumos está vazio.</p>
                                     ) : supplies.map(sup => (
-                                        <div key={sup.id} className="bg-admincard p-4 rounded-xl border border-gray-800 flex justify-between items-center group">
-                                            <div className="flex items-center gap-6">
-                                                <div className="w-64">
-                                                    <h4 className="font-medium text-white text-lg">{sup.name}</h4>
-                                                    <div className="mt-1">
-                                                        {sup.status === 'ok' && <span className="text-[10px] text-green-400 uppercase tracking-widest font-bold">✓ Seguro</span>}
-                                                        {sup.status === 'atencao' && <span className="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">⚠️ Comprar logo</span>}
-                                                        {sup.status === 'critico' && <span className="text-[10px] text-red-400 uppercase tracking-widest font-bold animate-pulse">❌ Faltando!</span>}
-                                                    </div>
-                                                </div>
-                                                
-                                                {/* Controles de + e - para Insumos */}
-                                                <div className="flex items-center gap-3 bg-gray-800/50 p-2 rounded-lg border border-gray-700">
-                                                    <button onClick={() => handleUpdateSupplyQty(sup.id, sup.qty, -1)} className="w-8 h-8 rounded bg-gray-700 text-white hover:bg-red-500/50 hover:text-red-200 flex items-center justify-center font-bold text-lg transition-colors">−</button>
-                                                    <span className="font-mono text-xl w-8 text-center">{sup.qty}</span>
-                                                    <button onClick={() => handleUpdateSupplyQty(sup.id, sup.qty, 1)} className="w-8 h-8 rounded bg-gray-700 text-white hover:bg-green-500/50 hover:text-green-200 flex items-center justify-center font-bold text-lg transition-colors">+</button>
+                                        <div key={sup.id} className="bg-admincard p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row justify-between items-center group gap-4">
+                                            <div className="flex-1 w-full">
+                                                <h4 className="font-medium text-white text-lg flex items-center gap-2">
+                                                    {sup.name} 
+                                                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">Alerta em: {sup.threshold}{sup.unit}</span>
+                                                </h4>
+                                                <div className="mt-1">
+                                                    {sup.status === 'ok' && <span className="text-[10px] text-green-400 uppercase tracking-widest font-bold">✓ Seguro</span>}
+                                                    {sup.status === 'atencao' && <span className="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">⚠️ Comprar logo</span>}
+                                                    {sup.status === 'critico' && <span className="text-[10px] text-red-400 uppercase tracking-widest font-bold animate-pulse">❌ Faltando / Crítico!</span>}
                                                 </div>
                                             </div>
+                                            
+                                            {/* SISTEMA DE EDIÇÃO DE QUANTIDADE */}
+                                            <div className="flex items-center gap-3">
+                                                {editingSupId === sup.id ? (
+                                                    <div className="flex items-center gap-2 bg-gray-800 p-1 rounded-lg">
+                                                        <input type="number" autoFocus className="admin-input w-24 text-center" value={editingSupQty} onChange={e => setEditingSupQty(e.target.value)} placeholder="Nova qtd" />
+                                                        <span className="text-gray-400 text-sm">{sup.unit}</span>
+                                                        <button onClick={() => handleSaveSupplyQty(sup.id, sup.threshold)} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-500">Salvar</button>
+                                                        <button onClick={() => setEditingSupId(null)} className="text-gray-400 px-2 hover:text-white text-xs">Cancelar</button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-4 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+                                                        <span className="font-mono text-2xl text-ouro">{sup.qty} <span className="text-sm text-gray-400">{sup.unit}</span></span>
+                                                        <button onClick={() => { setEditingSupId(sup.id); setEditingSupQty(sup.qty); }} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded transition">✏️ Ajustar</button>
+                                                    </div>
+                                                )}
 
-                                            <button onClick={() => handleDeleteSupply(sup.id)} className="text-gray-500 hover:text-red-500 transition px-2" title="Deletar da lista">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
+                                                <button onClick={() => handleDeleteSupply(sup.id)} className="text-gray-500 hover:text-red-500 transition px-2" title="Deletar da lista">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
