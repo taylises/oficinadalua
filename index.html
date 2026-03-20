@@ -6,7 +6,7 @@
     <title>Oficina da Lua | Taylise Ink</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Configuração de Cores e Fontes inspiradas no Logo -->
+    <!-- Configuração de Cores e Fontes -->
     <script>
         tailwind.config = {
             theme: {
@@ -17,8 +17,8 @@
                         ouro: '#dca868', 
                         ouroclaro: '#f4ce83',
                         texto: '#e2e8f0',
-                        adminbg: '#111827', // Fundo mais escuro para o admin
-                        admincard: '#1f2937' // Card do admin
+                        adminbg: '#111827',
+                        admincard: '#1f2937'
                     },
                     fontFamily: {
                         serif: ['"Cinzel Decorative"', 'serif'],
@@ -35,31 +35,38 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- FIREBASE (Deixei preparado para quando você for usar) -->
-    <!-- 
+    <!-- FIREBASE MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
-            // SUAS CHAVES ENTRARÃO AQUI
+            apiKey: "AIzaSyDdiY8S8GN-OB7iFLZ34fVhbsGGOzICo3A",
+            authDomain: "oficinadalua-574a7.firebaseapp.com",
+            projectId: "oficinadalua-574a7",
+            storageBucket: "oficinadalua-574a7.firebasestorage.app",
+            messagingSenderId: "1073145705062",
+            appId: "1:1073145705062:web:f1ad5a9d407a873e1273a7",
+            measurementId: "G-8V4312YZR1"
         };
+        
         const app = initializeApp(firebaseConfig);
-        // window.auth = getAuth(app);
-        // window.db = getFirestore(app);
+        
+        window.fbAuth = getAuth(app);
+        window.fbDb = getFirestore(app);
+        window.fbMethods = {
+            signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously,
+            collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc
+        };
+
+        window.dispatchEvent(new Event('firebase-ready'));
     </script> 
-    -->
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Dancing+Script:wght@400;700&family=Inter:wght@300;400;600&display=swap');
         
-        body {
-            background-color: #202a36;
-            color: #e2e8f0;
-            margin: 0;
-            overflow-x: hidden;
-        }
+        body { background-color: #202a36; color: #e2e8f0; margin: 0; overflow-x: hidden; }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(-2deg); }
@@ -79,34 +86,20 @@
         }
 
         .fade-in { animation: fadeIn 0.8s ease-out forwards; }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .form-input {
-            background: #2b3847;
-            border: 1px solid rgba(220, 168, 104, 0.3);
-            color: white;
-            padding: 12px;
-            border-radius: 12px;
-            width: 100%;
-            outline: none;
-            transition: border 0.3s;
+            background: #2b3847; border: 1px solid rgba(220, 168, 104, 0.3);
+            color: white; padding: 12px; border-radius: 12px; width: 100%; outline: none; transition: border 0.3s;
         }
         .form-input:focus { border-color: #dca868; }
 
-        /* Estilos específicos para o painel Admin */
         .admin-input {
-            background: #374151;
-            border: 1px solid #4b5563;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            width: 100%;
-            outline: none;
-            font-size: 0.875rem;
+            background: #374151; border: 1px solid #4b5563;
+            color: white; padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; font-size: 0.875rem;
         }
         .admin-input:focus { border-color: #dca868; }
 
@@ -119,12 +112,11 @@
 
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
+        const appId = "oficinalua"; 
 
-        // --- COMPONENTE LOGO (COM LINK DO GOOGLE DRIVE CORRIGIDO) ---
+        // --- COMPONENTE LOGO ---
         const LogoOficina = ({ size = 80 }) => {
-            // ID extraído do seu link: 1Hxt6UiA_FTS_iFwxhOTRM5HO3CXc27qs
-            const driveImageUrl = "https://drive.google.com/uc?export=view&id=1Hxt6UiA_FTS_iFwxhOTRM5HO3CXc27qs";
-            
+            const driveImageUrl = "https://lh3.googleusercontent.com/d/1Hxt6UiA_FTS_iFwxhOTRM5HO3CXc27qs";
             return (
                 <div className="relative animate-float flex items-center justify-center" style={{ width: size, height: size }}>
                     <img 
@@ -132,8 +124,10 @@
                         alt="Logo Oficina da Lua" 
                         className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(220,168,104,0.4)]"
                         onError={(e) => {
-                            e.target.onerror = null; 
-                            e.target.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZGNhODY4IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZGNhODY4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Mb2dvPC90ZXh0Pjwvc3ZnPg==";
+                            if (!e.target.dataset.retried) {
+                                e.target.dataset.retried = "true";
+                                e.target.src = "https://drive.google.com/thumbnail?id=1Hxt6UiA_FTS_iFwxhOTRM5HO3CXc27qs&sz=w800";
+                            }
                         }}
                     />
                 </div>
@@ -141,27 +135,56 @@
         };
 
         // ==========================================
-        // ÁREA PÚBLICA (O SITE QUE O CLIENTE VÊ)
+        // ÁREA PÚBLICA (CLIENTE)
         // ==========================================
-        const PublicSite = ({ navigateToAdmin }) => {
+        const PublicSite = ({ navigateToAdmin, user }) => {
             const [section, setSection] = useState('inicio');
-            
-            // Dados (Futuramente virão do Firebase)
             const [orderForm, setOrderForm] = useState({ name: '', type: 'Arte Personalizada', idea: '' });
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [artworks, setArtworks] = useState([]);
 
-            const arts = [
-                { id: 1, name: "Incensário Artesanal", desc: "Peça decorativa funcional, com estética mística. Produção manual e design autoral.", price: "40,00", image: "https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&w=600&q=80" },
-                { id: 2, name: "Caixinha de Joias", desc: "Estrutura firme e acabamento detalhado para guardar acessórios e pequenos objetos.", price: "60,00", image: "https://images.unsplash.com/photo-1582142306909-195724d339c4?auto=format&fit=crop&w=600&q=80" }
-            ];
+            // Busca as obras do Estoque no Firebase para exibir no site
+            useEffect(() => {
+                if (!window.fbMethods) return;
+                const { collection, onSnapshot } = window.fbMethods;
+                const unsub = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), 
+                    (snapshot) => {
+                        setArtworks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    }
+                );
+                return () => unsub();
+            }, [user]);
 
-            const paintings = [
-                { id: 1, name: "Ilustração Botânica Dark", desc: "Arte original em nanquim, explorando o misticismo e a natureza.", price: "120,00", image: "https://images.unsplash.com/photo-1513689125086-6c432170e843?auto=format&fit=crop&w=600&q=80" }
-            ];
+            const arts = artworks.filter(a => a.category === 'Cerâmica / Biscuit');
+            const paintings = artworks.filter(a => a.category === 'Pintura / Ilustração');
 
-            const handleOrderSubmit = () => {
+            const handleOrderSubmit = async () => {
                 if (!orderForm.name || !orderForm.idea) return alert("Preencha seu nome e a sua ideia mágica!");
-                const msg = `Olá Tay! ✨\nSou *${orderForm.name}*.\nQuero encomendar: *${orderForm.type}*\n\nMinha ideia:\n"${orderForm.idea}"`;
-                window.open(`https://wa.me/5551981749825?text=${encodeURIComponent(msg)}`);
+                if (!user) return alert("Conectando ao banco de dados... Tente novamente.");
+                
+                setIsSubmitting(true);
+                try {
+                    const { addDoc, collection } = window.fbMethods;
+                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), {
+                        client: orderForm.name,
+                        item: orderForm.type,
+                        idea: orderForm.idea,
+                        status: 'Novo',
+                        deadline: '', // Prazo em branco para a Tay definir no Admin
+                        createdAt: new Date().toISOString()
+                    });
+
+                    const msg = `Olá Tay! ✨\nSou *${orderForm.name}*.\nQuero encomendar: *${orderForm.type}*\n\nMinha ideia:\n"${orderForm.idea}"`;
+                    window.open(`https://wa.me/5551981749825?text=${encodeURIComponent(msg)}`);
+                    
+                    setOrderForm({ name: '', type: 'Arte Personalizada', idea: '' });
+                    alert("Sua encomenda foi enviada para o ateliê!");
+                } catch (error) {
+                    console.error("Erro", error);
+                    alert("Ocorreu um erro ao enviar.");
+                } finally {
+                    setIsSubmitting(false);
+                }
             };
 
             const stars = useMemo(() => [...Array(25)].map((_, i) => ({
@@ -173,15 +196,12 @@
                     <div className="fixed inset-0 pointer-events-none z-[1] paper-texture opacity-10"></div>
                     <div className="fixed inset-0 pointer-events-none z-0">
                         {stars.map(s => (
-                            <svg key={s.id} viewBox="0 0 24 24" fill="currentColor" 
-                                 className="absolute text-ouroclaro/10 animate-pulse" 
-                                 style={{ top: s.top, left: s.left, width: s.size, animationDelay: s.delay }}>
+                            <svg key={s.id} viewBox="0 0 24 24" fill="currentColor" className="absolute text-ouroclaro/10 animate-pulse" style={{ top: s.top, left: s.left, width: s.size, animationDelay: s.delay }}>
                                 <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                             </svg>
                         ))}
                     </div>
 
-                    {/* NAVBAR PC */}
                     <nav className="hidden md:flex fixed top-0 w-full h-24 glass-nav z-50 border-b px-12 justify-between items-center shadow-lg">
                         <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setSection('inicio')}>
                             <LogoOficina size={65} />
@@ -198,22 +218,13 @@
                         </div>
                     </nav>
 
-                    {/* NAVBAR MOBILE */}
                     <nav className="md:hidden fixed bottom-0 w-full h-20 glass-nav z-50 border-t flex justify-around items-center px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-                        <button onClick={() => setSection('inicio')} className={`flex flex-col items-center gap-1 ${section === 'inicio' ? 'text-ouro' : 'text-slate-400'}`}>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Artes</span>
-                        </button>
-                        <button onClick={() => setSection('pinturas')} className={`flex flex-col items-center gap-1 ${section === 'pinturas' ? 'text-ouro' : 'text-slate-400'}`}>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Pinturas</span>
-                        </button>
-                        <button onClick={() => setSection('sobre')} className={`flex flex-col items-center gap-1 ${section === 'sobre' ? 'text-ouro' : 'text-slate-400'}`}>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Sobre</span>
-                        </button>
+                        <button onClick={() => setSection('inicio')} className={`flex flex-col items-center gap-1 ${section === 'inicio' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Artes</span></button>
+                        <button onClick={() => setSection('pinturas')} className={`flex flex-col items-center gap-1 ${section === 'pinturas' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Pinturas</span></button>
+                        <button onClick={() => setSection('sobre')} className={`flex flex-col items-center gap-1 ${section === 'sobre' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Sobre</span></button>
                     </nav>
 
                     <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 pt-32 md:pt-12 fade-in">
-                        
-                        {/* SEÇÃO INÍCIO */}
                         {section === 'inicio' && (
                             <div className="space-y-24">
                                 <header className="text-center space-y-8 pt-8">
@@ -227,33 +238,35 @@
                                     <div className="flex justify-between items-end border-b border-ouro/20 pb-4">
                                         <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Cerâmica e Biscuit</h3>
                                     </div>
-                                    
-                                    <div className="grid md:grid-cols-2 gap-10">
-                                        {arts.map(art => (
-                                            <div key={art.id} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
-                                                <div className="aspect-[4/5] bg-slate-800 relative">
-                                                    <img src={art.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                                                </div>
-                                                <div className="p-8 space-y-4 flex-1 flex flex-col">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{art.name}</h4>
-                                                        <div className="text-right ml-4 font-sans">
-                                                            <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
-                                                            <span className="text-lg font-bold text-texto">R$ {art.price}</span>
-                                                        </div>
+                                    {arts.length === 0 ? (
+                                        <p className="text-slate-500 italic">Nenhuma peça de cerâmica no estoque no momento.</p>
+                                    ) : (
+                                        <div className="grid md:grid-cols-2 gap-10">
+                                            {arts.map(art => (
+                                                <div key={art.id} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
+                                                    <div className="aspect-[4/5] bg-slate-800 relative">
+                                                        <img src={art.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
                                                     </div>
-                                                    <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed">{art.desc}</p>
-                                                    <button onClick={() => {
-                                                        document.getElementById('form-encomenda').scrollIntoView({ behavior: 'smooth' });
-                                                        setOrderForm({...orderForm, type: 'Cerâmica / Biscuit', idea: `Olá! Amei a peça: ${art.name}`});
-                                                    }} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
+                                                    <div className="p-8 space-y-4 flex-1 flex flex-col">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{art.name}</h4>
+                                                            <div className="text-right ml-4 font-sans">
+                                                                <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
+                                                                <span className="text-lg font-bold text-texto">R$ {art.price}</span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed">{art.desc}</p>
+                                                        <button onClick={() => {
+                                                            document.getElementById('form-encomenda').scrollIntoView({ behavior: 'smooth' });
+                                                            setOrderForm({...orderForm, type: 'Cerâmica / Biscuit', idea: `Olá! Amei a peça: ${art.name}`});
+                                                        }} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* FORMULÁRIO DE ENCOMENDA */}
                                 <div id="form-encomenda" className="bg-card p-8 md:p-16 rounded-[3rem] border border-ouro/20 shadow-2xl relative overflow-hidden">
                                     <div className="max-w-xl mx-auto space-y-8 relative z-10">
                                         <div className="text-center space-y-4 mb-10">
@@ -273,8 +286,9 @@
                                             <textarea placeholder="Me conte sua ideia! (Cores, referências, sentimentos da peça...)" 
                                                       className="form-input font-sans text-sm h-32 resize-none"
                                                       value={orderForm.idea} onChange={e => setOrderForm({...orderForm, idea: e.target.value})}></textarea>
-                                            <button onClick={handleOrderSubmit} className="w-full bg-ouro text-fundo py-5 rounded-xl font-sans font-bold text-xs uppercase tracking-widest hover:bg-ouroclaro transition-all shadow-lg shadow-ouro/20 mt-2">
-                                                Enviar Encomenda (WhatsApp)
+                                            
+                                            <button onClick={handleOrderSubmit} disabled={isSubmitting} className={`w-full bg-ouro text-fundo py-5 rounded-xl font-sans font-bold text-xs uppercase tracking-widest transition-all shadow-lg mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-ouroclaro shadow-ouro/20'}`}>
+                                                {isSubmitting ? 'Enviando ao Ateliê...' : 'Enviar Encomenda (WhatsApp)'}
                                             </button>
                                         </div>
                                     </div>
@@ -282,22 +296,49 @@
                             </div>
                         )}
 
-                        {/* OUTRAS SEÇÕES (Simplificadas para o exemplo) */}
                         {section === 'pinturas' && (
-                            <div className="text-center fade-in space-y-8">
-                                <h2 className="font-serif text-5xl font-bold text-ouro">Galeria de Pinturas</h2>
-                                <p className="text-slate-300 font-light">Explorando o lado sombrio e sensível da estética.</p>
-                                {/* Aqui mapearia as pinturas da mesma forma que as artes */}
+                            <div className="space-y-12 fade-in">
+                                <div className="text-center space-y-8">
+                                    <h2 className="font-serif text-5xl font-bold text-ouro">Galeria de Pinturas</h2>
+                                    <p className="text-slate-300 font-light">Explorando o lado sombrio e sensível da estética.</p>
+                                </div>
+                                {paintings.length === 0 ? (
+                                    <p className="text-slate-500 italic text-center">Nenhuma pintura no estoque no momento.</p>
+                                ) : (
+                                    <div className="grid md:grid-cols-2 gap-10">
+                                        {paintings.map(paint => (
+                                            <div key={paint.id} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
+                                                <div className="aspect-[4/5] bg-slate-800 relative">
+                                                    <img src={paint.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                                                </div>
+                                                <div className="p-8 space-y-4 flex-1 flex flex-col">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h4 className="font-serif text-2xl font-bold text-ouro leading-tight">{paint.name}</h4>
+                                                        <div className="text-right ml-4 font-sans">
+                                                            <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold">Valor</span>
+                                                            <span className="text-lg font-bold text-texto">R$ {paint.price}</span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed">{paint.desc}</p>
+                                                    <button onClick={() => {
+                                                        setSection('inicio');
+                                                        setTimeout(() => document.getElementById('form-encomenda').scrollIntoView({ behavior: 'smooth' }), 100);
+                                                        setOrderForm({...orderForm, type: 'Pintura / Ilustração', idea: `Olá! Quero a obra: ${paint.name}`});
+                                                    }} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                         
                         {section === 'sobre' && (
                             <div className="text-center fade-in space-y-8 max-w-2xl mx-auto">
                                 <h2 className="font-serif text-5xl font-bold text-ouro">Seja bem-vindo ao meu mundo</h2>
-                                <p className="text-slate-300 font-light text-lg">Oi, eu sou a Tay! Aqui, a arte é a linguagem que uso para explorar a natureza, o misticismo e a beleza dos corpos femininos. Tudo o que verá nasce de um lugar de afeto e de um olhar que encontra magia no sensível e no sombrio.</p>
+                                <p className="text-slate-300 font-light text-lg">Oi, eu sou a Tay! Aqui, a arte é a linguagem que uso para explorar a natureza, o misticismo e a beleza dos corpos femininos.</p>
                             </div>
                         )}
-
                     </main>
 
                     <footer className="py-20 text-center border-t border-ouro/10 mt-20 opacity-60 relative z-10">
@@ -305,7 +346,6 @@
                         <div className="font-serif text-ouro text-lg tracking-widest flex items-center justify-center gap-2">Oficina <span className="font-hand lowercase">da</span> Lua</div>
                         <p className="font-sans text-[8px] uppercase tracking-[0.4em] mt-4 text-slate-500">Taylise Ink • 2026</p>
                         
-                        {/* ACESSO AO ADMIN (Escondido no rodapé) */}
                         <button onClick={navigateToAdmin} className="mt-8 text-slate-600 hover:text-ouro transition-colors" title="Acesso Restrito">
                             <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                         </button>
@@ -317,63 +357,264 @@
         // ==========================================
         // ÁREA RESTRITA (ADMIN DASHBOARD)
         // ==========================================
-        const AdminDashboard = ({ onLogout }) => {
+        const AdminDashboard = ({ onLogout, user }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
+            const [orders, setOrders] = useState([]);
+            const [supplies, setSupplies] = useState([]);
+            const [artworks, setArtworks] = useState([]);
 
-            // Mock de dados para o controle
-            const orders = [
-                { id: '101', client: 'Marina S.', item: 'Incensário', status: 'Produção', deadline: '25/03/2026' },
-                { id: '102', client: 'João P.', item: 'Pintura A4', status: 'Novo', deadline: '02/04/2026' }
-            ];
+            // Estado Form Insumos
+            const [newSupName, setNewSupName] = useState('');
+            const [newSupQty, setNewSupQty] = useState('');
+            
+            // Estado Form Obras (Estoque)
+            const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
 
-            const supplies = [
-                { id: 1, name: 'Argila Escolar 1kg', qty: 2, status: 'ok' },
-                { id: 2, name: 'Tinta Nanquim Preta', qty: 0, status: 'critico' },
-                { id: 3, name: 'Papel Pólen 90g', qty: 15, status: 'atencao' }
-            ];
+            // Estado Modal Encomenda (Adicionar / Editar)
+            const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+            const [editingOrder, setEditingOrder] = useState(null); // null = Nova, Object = Editando
+            const [orderForm, setOrderForm] = useState({ client: '', item: '', idea: '', status: 'Novo', deadline: '' });
+
+            // Busca de dados em tempo real
+            useEffect(() => {
+                if (!user) return;
+                const { collection, onSnapshot } = window.fbMethods;
+                
+                const unsubOrders = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), 
+                    (snapshot) => {
+                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                        setOrders(data);
+                    }
+                );
+
+                const unsubSupplies = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies'), 
+                    (snapshot) => setSupplies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+                );
+
+                const unsubArtworks = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), 
+                    (snapshot) => setArtworks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+                );
+
+                return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); };
+            }, [user]);
+
+            // --- FUNÇÕES DE INSUMOS ---
+            const handleAddSupply = async (e) => {
+                e.preventDefault();
+                if (!newSupName) return;
+                const { addDoc, collection } = window.fbMethods;
+                await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies'), {
+                    name: newSupName, qty: Number(newSupQty) || 0, status: 'ok'
+                });
+                setNewSupName(''); setNewSupQty('');
+            };
+
+            const handleUpdateSupplyQty = async (id, currentQty, change) => {
+                const newQty = Math.max(0, currentQty + change);
+                let newStatus = newQty === 0 ? 'critico' : newQty <= 3 ? 'atencao' : 'ok';
+                const { updateDoc, doc } = window.fbMethods;
+                await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id), {
+                    qty: newQty, status: newStatus
+                });
+            };
+
+            const handleDeleteSupply = async (id) => {
+                if(!confirm("Deletar insumo?")) return;
+                const { deleteDoc, doc } = window.fbMethods;
+                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id));
+            };
+
+            // --- FUNÇÕES DE ESTOQUE/OBRAS ---
+            const handleAddArtwork = async (e) => {
+                e.preventDefault();
+                const { addDoc, collection } = window.fbMethods;
+                await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), {
+                    ...artForm, createdAt: new Date().toISOString()
+                });
+                setArtForm({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+                alert("Obra adicionada ao site!");
+            };
+
+            const handleDeleteArtwork = async (id) => {
+                if(!confirm("Remover obra do site público?")) return;
+                const { deleteDoc, doc } = window.fbMethods;
+                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', id));
+            };
+
+            // --- FUNÇÕES DE ENCOMENDAS ---
+            const openOrderModal = (order = null) => {
+                if (order) {
+                    setEditingOrder(order.id);
+                    setOrderForm({ ...order });
+                } else {
+                    setEditingOrder(null);
+                    setOrderForm({ client: '', item: '', idea: '', status: 'Novo', deadline: '' });
+                }
+                setIsOrderModalOpen(true);
+            };
+
+            const handleSaveOrder = async (e) => {
+                e.preventDefault();
+                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
+                
+                if (editingOrder) {
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', editingOrder), { ...orderForm });
+                } else {
+                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders'), {
+                        ...orderForm, createdAt: new Date().toISOString()
+                    });
+                }
+                setIsOrderModalOpen(false);
+            };
+
+            const handleAdvanceOrder = async (id, currentStatus) => {
+                const nextStatus = currentStatus === 'Novo' ? 'Produção' : currentStatus === 'Produção' ? 'Pronto' : 'Entregue';
+                if (currentStatus === 'Entregue') return;
+                const { updateDoc, doc } = window.fbMethods;
+                await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id), { status: nextStatus });
+            };
+
+            // --- LÓGICA DO CALENDÁRIO / AGENDA ---
+            const renderAgenda = () => {
+                // Filtra encomendas não entregues que têm prazo definido
+                const upcoming = orders.filter(o => o.deadline && o.status !== 'Entregue');
+                
+                // Agrupa por Mês/Ano
+                const grouped = upcoming.reduce((acc, order) => {
+                    const date = new Date(order.deadline + 'T12:00:00'); // Evitar fuso
+                    const monthYear = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    if (!acc[monthYear]) acc[monthYear] = [];
+                    acc[monthYear].push(order);
+                    return acc;
+                }, {});
+
+                // Ordena os meses
+                const sortedMonths = Object.keys(grouped).sort((a, b) => {
+                    const dateA = new Date(grouped[a][0].deadline);
+                    const dateB = new Date(grouped[b][0].deadline);
+                    return dateA - dateB;
+                });
+
+                if (sortedMonths.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhum prazo definido no calendário para encomendas ativas.</p>;
+
+                return (
+                    <div className="mt-8 space-y-8">
+                        {sortedMonths.map(month => (
+                            <div key={month} className="relative pl-6 border-l-2 border-ouro/30">
+                                <div className="absolute w-3 h-3 bg-ouro rounded-full -left-[7px] top-1"></div>
+                                <h3 className="text-lg font-serif text-ouro capitalize mb-4">{month}</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {grouped[month].sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).map(order => (
+                                        <div key={order.id} className="bg-admincard border border-gray-700 p-4 rounded-lg shadow-lg">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <span className="text-xs text-ouro font-bold uppercase tracking-widest block">{new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>
+                                                    <h4 className="font-medium text-white">{order.client}</h4>
+                                                </div>
+                                                <span className={`text-[10px] px-2 py-1 rounded ${order.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-blue-900/50 text-blue-400'}`}>{order.status}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-400 truncate">{order.item}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
 
             return (
-                <div className="min-h-screen bg-adminbg text-texto font-sans flex flex-col md:flex-row">
-                    {/* Sidebar Admin */}
+                <div className="min-h-screen bg-adminbg text-texto font-sans flex flex-col md:flex-row relative">
+                    
+                    {/* MODAL DE ENCOMENDAS */}
+                    {isOrderModalOpen && (
+                        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
+                            <div className="bg-admincard p-6 rounded-2xl w-full max-w-lg border border-ouro/30 shadow-2xl">
+                                <h3 className="text-2xl font-serif text-ouro mb-4">{editingOrder ? 'Editar Encomenda' : 'Nova Encomenda'}</h3>
+                                <form onSubmit={handleSaveOrder} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Cliente</label>
+                                            <input type="text" className="admin-input" required value={orderForm.client} onChange={e => setOrderForm({...orderForm, client: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Prazo / Data (Opcional)</label>
+                                            <input type="date" className="admin-input" value={orderForm.deadline} onChange={e => setOrderForm({...orderForm, deadline: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Peça / Serviço</label>
+                                        <input type="text" className="admin-input" required value={orderForm.item} onChange={e => setOrderForm({...orderForm, item: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Ideia / Detalhes</label>
+                                        <textarea className="admin-input h-20" required value={orderForm.idea} onChange={e => setOrderForm({...orderForm, idea: e.target.value})}></textarea>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Status Atual</label>
+                                        <select className="admin-input" value={orderForm.status} onChange={e => setOrderForm({...orderForm, status: e.target.value})}>
+                                            <option>Novo</option>
+                                            <option>Produção</option>
+                                            <option>Pronto</option>
+                                            <option>Entregue</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex justify-end gap-2 mt-6">
+                                        <button type="button" onClick={() => setIsOrderModalOpen(false)} className="px-4 py-2 text-gray-400 hover:text-white text-sm">Cancelar</button>
+                                        <button type="submit" className="px-6 py-2 bg-ouro text-adminbg font-bold rounded-lg text-sm">Salvar no Banco</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     <aside className="w-full md:w-64 bg-admincard border-r border-gray-800 flex flex-col">
                         <div className="p-6 border-b border-gray-800 flex items-center gap-3">
                             <LogoOficina size={40} />
                             <div>
-                                <h2 className="font-serif text-ouro font-bold">Ateliê Admin</h2>
-                                <span className="text-[10px] text-gray-500 uppercase tracking-widest">Painel de Controle</span>
+                                <h2 className="font-serif text-ouro font-bold leading-tight">Ateliê<br/>Admin</h2>
                             </div>
                         </div>
                         <nav className="flex-1 p-4 space-y-2 text-sm">
-                            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📊 Visão Geral</button>
-                            <button onClick={() => setActiveTab('encomendas')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'encomendas' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📦 Encomendas</button>
-                            <button onClick={() => setActiveTab('estoque')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'estoque' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Estoque & Obras</button>
+                            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📅 Agenda Anual & Geral</button>
+                            <button onClick={() => setActiveTab('encomendas')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'encomendas' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
+                                📦 Encomendas {orders.length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{orders.filter(o => o.status === 'Novo').length}</span>}
+                            </button>
                             <button onClick={() => setActiveTab('insumos')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'insumos' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🎨 Insumos</button>
+                            <button onClick={() => setActiveTab('estoque')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'estoque' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Estoque Site Público</button>
                         </nav>
                         <div className="p-4 border-t border-gray-800">
                             <button onClick={onLogout} className="w-full px-4 py-2 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-900/20 rounded-lg">Sair do Painel</button>
                         </div>
                     </aside>
 
-                    {/* Main Content Admin */}
                     <main className="flex-1 p-6 md:p-10 overflow-y-auto">
                         
                         {activeTab === 'dashboard' && (
-                            <div className="space-y-6 fade-in">
-                                <h2 className="text-2xl font-serif text-white">Resumo do Ateliê</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="bg-admincard p-6 rounded-xl border border-gray-800">
-                                        <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Encomendas Ativas</h3>
-                                        <p className="text-3xl font-bold text-ouro">4</p>
+                            <div className="space-y-10 fade-in">
+                                <div>
+                                    <h2 className="text-2xl font-serif text-white mb-6">Resumo do Ateliê</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="bg-admincard p-6 rounded-xl border border-gray-800">
+                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Encomendas Ativas</h3>
+                                            <p className="text-3xl font-bold text-ouro">{orders.filter(o => o.status !== 'Entregue').length}</p>
+                                        </div>
+                                        <div className="bg-admincard p-6 rounded-xl border border-gray-800">
+                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Obras no Site</h3>
+                                            <p className="text-3xl font-bold text-green-400">{artworks.length}</p>
+                                        </div>
+                                        <div className="bg-admincard p-6 rounded-xl border border-red-900/30">
+                                            <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Insumos em Falta/Atenção</h3>
+                                            <p className="text-3xl font-bold text-red-400">{supplies.filter(s => s.status !== 'ok').length}</p>
+                                        </div>
                                     </div>
-                                    <div className="bg-admincard p-6 rounded-xl border border-gray-800">
-                                        <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Faturamento (Mês)</h3>
-                                        <p className="text-3xl font-bold text-green-400">R$ 850,00</p>
-                                    </div>
-                                    <div className="bg-admincard p-6 rounded-xl border border-red-900/30">
-                                        <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-2">Insumos em Falta</h3>
-                                        <p className="text-3xl font-bold text-red-400">1</p>
-                                        <p className="text-xs text-red-400/70 mt-1">Tinta Nanquim Preta</p>
-                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-gray-800">
+                                    <h2 className="text-2xl font-serif text-white mb-2">Calendário de Entregas</h2>
+                                    <p className="text-sm text-gray-400">Visão de longo prazo das suas encomendas (organizadas por prazo).</p>
+                                    {renderAgenda()}
                                 </div>
                             </div>
                         )}
@@ -382,33 +623,48 @@
                             <div className="space-y-6 fade-in">
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-2xl font-serif text-white">Gestão de Encomendas</h2>
-                                    <button className="bg-ouro text-adminbg px-4 py-2 rounded text-xs font-bold">+ Nova Encomenda</button>
+                                    <button onClick={() => openOrderModal()} className="bg-ouro text-adminbg px-4 py-2 rounded-lg text-xs font-bold hover:bg-ouroclaro">+ Adicionar Manualmente</button>
                                 </div>
                                 <div className="bg-admincard rounded-xl border border-gray-800 overflow-hidden">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-gray-800/50 text-gray-400">
                                             <tr>
-                                                <th className="p-4 font-normal">ID</th>
-                                                <th className="p-4 font-normal">Cliente</th>
-                                                <th className="p-4 font-normal">Peça</th>
-                                                <th className="p-4 font-normal">Prazo</th>
+                                                <th className="p-4 font-normal w-1/4">Cliente</th>
+                                                <th className="p-4 font-normal w-1/4">Peça/Ideia</th>
+                                                <th className="p-4 font-normal">Prazo Definido</th>
                                                 <th className="p-4 font-normal">Status</th>
-                                                <th className="p-4 font-normal">Ações</th>
+                                                <th className="p-4 font-normal text-right">Ação</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {orders.map(order => (
+                                            {orders.length === 0 ? (
+                                                <tr><td colSpan="5" className="p-8 text-center text-gray-500">Nenhuma encomenda ativa.</td></tr>
+                                            ) : orders.map(order => (
                                                 <tr key={order.id} className="border-t border-gray-800 hover:bg-gray-800/20">
-                                                    <td className="p-4 text-gray-500">#{order.id}</td>
                                                     <td className="p-4 font-medium">{order.client}</td>
-                                                    <td className="p-4">{order.item}</td>
-                                                    <td className="p-4 text-ouro">{order.deadline}</td>
                                                     <td className="p-4">
-                                                        <span className={`px-2 py-1 rounded text-xs ${order.status === 'Novo' ? 'bg-blue-900/50 text-blue-400' : 'bg-yellow-900/50 text-yellow-400'}`}>
+                                                        <div className="text-ouro">{order.item}</div>
+                                                        <div className="text-xs text-gray-500 mt-1 truncate max-w-[200px]" title={order.idea}>{order.idea}</div>
+                                                    </td>
+                                                    <td className="p-4 text-gray-400 text-xs">
+                                                        {order.deadline ? new Date(order.deadline + 'T12:00:00').toLocaleDateString('pt-BR') : <span className="text-red-400/50 italic">Sem prazo</span>}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-1 rounded text-xs 
+                                                            ${order.status === 'Novo' ? 'bg-blue-900/50 text-blue-400' : ''}
+                                                            ${order.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : ''}
+                                                            ${order.status === 'Pronto' ? 'bg-green-900/50 text-green-400' : ''}
+                                                            ${order.status === 'Entregue' ? 'bg-gray-800 text-gray-500' : ''}
+                                                        `}>
                                                             {order.status}
                                                         </span>
                                                     </td>
-                                                    <td className="p-4 text-ouro cursor-pointer hover:underline">Editar</td>
+                                                    <td className="p-4 text-right space-x-2 flex justify-end">
+                                                        <button onClick={() => openOrderModal(order)} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700 hover:bg-gray-700">Editar</button>
+                                                        {order.status !== 'Entregue' && (
+                                                            <button onClick={() => handleAdvanceOrder(order.id, order.status)} className="text-xs bg-ouro/10 text-ouro px-2 py-1 rounded border border-ouro/30 hover:bg-ouro/20">Avançar ❯</button>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -420,19 +676,45 @@
                         {activeTab === 'insumos' && (
                             <div className="space-y-6 fade-in">
                                 <h2 className="text-2xl font-serif text-white">Controle de Insumos</h2>
-                                <p className="text-gray-400 text-sm">Controle de materiais para você nunca ficar sem na hora de criar.</p>
-                                <div className="grid gap-4">
-                                    {supplies.map(sup => (
-                                        <div key={sup.id} className="bg-admincard p-4 rounded-xl border border-gray-800 flex justify-between items-center">
-                                            <div>
-                                                <h4 className="font-medium">{sup.name}</h4>
-                                                <p className="text-xs text-gray-500">Quantidade atual: {sup.qty}</p>
+                                
+                                <form onSubmit={handleAddSupply} className="bg-admincard p-4 rounded-xl border border-gray-800 flex flex-wrap gap-4 items-end">
+                                    <div className="flex-1 min-w-[200px]">
+                                        <label className="text-xs text-gray-400 uppercase mb-1 block">Novo Material</label>
+                                        <input type="text" className="admin-input" value={newSupName} onChange={e => setNewSupName(e.target.value)} placeholder="Ex: Argila Branca 1kg" required />
+                                    </div>
+                                    <div className="w-24">
+                                        <label className="text-xs text-gray-400 uppercase mb-1 block">Qtd</label>
+                                        <input type="number" className="admin-input" value={newSupQty} onChange={e => setNewSupQty(e.target.value)} placeholder="0" />
+                                    </div>
+                                    <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-2 rounded-lg text-sm hover:bg-ouroclaro h-[38px]">+ Adicionar</button>
+                                </form>
+
+                                <div className="grid gap-3">
+                                    {supplies.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-4">Seu estoque de insumos está vazio.</p>
+                                    ) : supplies.map(sup => (
+                                        <div key={sup.id} className="bg-admincard p-4 rounded-xl border border-gray-800 flex justify-between items-center group">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-64">
+                                                    <h4 className="font-medium text-white text-lg">{sup.name}</h4>
+                                                    <div className="mt-1">
+                                                        {sup.status === 'ok' && <span className="text-[10px] text-green-400 uppercase tracking-widest font-bold">✓ Seguro</span>}
+                                                        {sup.status === 'atencao' && <span className="text-[10px] text-yellow-400 uppercase tracking-widest font-bold">⚠️ Comprar logo</span>}
+                                                        {sup.status === 'critico' && <span className="text-[10px] text-red-400 uppercase tracking-widest font-bold animate-pulse">❌ Faltando!</span>}
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Controles de + e - para Insumos */}
+                                                <div className="flex items-center gap-3 bg-gray-800/50 p-2 rounded-lg border border-gray-700">
+                                                    <button onClick={() => handleUpdateSupplyQty(sup.id, sup.qty, -1)} className="w-8 h-8 rounded bg-gray-700 text-white hover:bg-red-500/50 hover:text-red-200 flex items-center justify-center font-bold text-lg transition-colors">−</button>
+                                                    <span className="font-mono text-xl w-8 text-center">{sup.qty}</span>
+                                                    <button onClick={() => handleUpdateSupplyQty(sup.id, sup.qty, 1)} className="w-8 h-8 rounded bg-gray-700 text-white hover:bg-green-500/50 hover:text-green-200 flex items-center justify-center font-bold text-lg transition-colors">+</button>
+                                                </div>
                                             </div>
-                                            <div>
-                                                {sup.status === 'ok' && <span className="text-xs bg-green-900/30 text-green-400 px-3 py-1 rounded-full">Ok</span>}
-                                                {sup.status === 'atencao' && <span className="text-xs bg-yellow-900/30 text-yellow-400 px-3 py-1 rounded-full">Comprar em breve</span>}
-                                                {sup.status === 'critico' && <span className="text-xs bg-red-900/30 text-red-400 px-3 py-1 rounded-full animate-pulse">Faltando!</span>}
-                                            </div>
+
+                                            <button onClick={() => handleDeleteSupply(sup.id)} className="text-gray-500 hover:text-red-500 transition px-2" title="Deletar da lista">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -440,10 +722,54 @@
                         )}
 
                         {activeTab === 'estoque' && (
-                            <div className="space-y-6 fade-in text-center py-20">
-                                <h2 className="text-2xl font-serif text-white mb-2">Estoque do Site</h2>
-                                <p className="text-gray-400 text-sm">Aqui você adicionará e removerá obras do site principal.</p>
-                                <p className="text-ouro text-xs mt-4">(Será conectado ao Firebase em breve)</p>
+                            <div className="space-y-6 fade-in">
+                                <h2 className="text-2xl font-serif text-white">Obras no Site Público</h2>
+                                <p className="text-sm text-gray-400">Adicione suas peças aqui e elas aparecerão instantaneamente no seu site para os clientes.</p>
+                                
+                                <form onSubmit={handleAddArtwork} className="bg-admincard p-6 rounded-xl border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Nome da Obra</label>
+                                        <input type="text" className="admin-input" required value={artForm.name} onChange={e => setArtForm({...artForm, name: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Preço (Ex: 40,00)</label>
+                                        <input type="text" className="admin-input" required value={artForm.price} onChange={e => setArtForm({...artForm, price: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Categoria (Onde vai aparecer)</label>
+                                        <select className="admin-input" value={artForm.category} onChange={e => setArtForm({...artForm, category: e.target.value})}>
+                                            <option>Cerâmica / Biscuit</option>
+                                            <option>Pintura / Ilustração</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Link da Imagem (Ex: URL do Canva ou Unsplash)</label>
+                                        <input type="url" className="admin-input" required value={artForm.image} onChange={e => setArtForm({...artForm, image: e.target.value})} />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Descrição</label>
+                                        <textarea className="admin-input" required value={artForm.desc} onChange={e => setArtForm({...artForm, desc: e.target.value})}></textarea>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-3 rounded-lg hover:bg-ouroclaro w-full">Publicar Obra no Site</button>
+                                    </div>
+                                </form>
+
+                                <div className="grid md:grid-cols-3 gap-6 pt-4">
+                                    {artworks.map(art => (
+                                        <div key={art.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg group">
+                                            <div className="aspect-square bg-gray-900 relative">
+                                                <img src={art.image} className="w-full h-full object-cover opacity-80" />
+                                                <span className="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded uppercase tracking-widest">{art.category.split('/')[0]}</span>
+                                            </div>
+                                            <div className="p-4">
+                                                <h4 className="font-serif text-lg text-ouro truncate">{art.name}</h4>
+                                                <p className="text-sm text-white font-bold mb-2">R$ {art.price}</p>
+                                                <button onClick={() => handleDeleteArtwork(art.id)} className="w-full py-2 border border-red-900/50 text-red-400 rounded hover:bg-red-900/30 text-xs font-bold uppercase transition">Remover do Site</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -453,29 +779,53 @@
         };
 
         // ==========================================
-        // COMPONENTE PRINCIPAL (ROTEADOR)
+        // COMPONENTE PRINCIPAL (ROTEADOR + AUTH)
         // ==========================================
         function App() {
-            const [view, setView] = useState('public'); // 'public', 'login', 'admin'
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [view, setView] = useState('public');
+            const [user, setUser] = useState(null);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [firebaseReady, setFirebaseReady] = useState(!!window.fbAuth);
 
-            // Simulação de Login (Substituir por Firebase Auth depois)
-            const handleLogin = (e) => {
+            useEffect(() => {
+                if (!window.fbAuth) {
+                    const handleReady = () => setFirebaseReady(true);
+                    window.addEventListener('firebase-ready', handleReady);
+                    return () => window.removeEventListener('firebase-ready', handleReady);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (!firebaseReady) return;
+                const { fbAuth, fbMethods: { onAuthStateChanged, signInAnonymously } } = window;
+                
+                const initAuth = async () => {
+                    if (!fbAuth.currentUser) await signInAnonymously(fbAuth).catch(err => console.log(err));
+                };
+                initAuth();
+
+                const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+                return () => unsubscribe();
+            }, [firebaseReady]);
+
+            const handleLogin = async (e) => {
                 e.preventDefault();
-                // Aqui entrará o: signInWithEmailAndPassword(auth, email, password)
-                setIsAuthenticated(true);
-                setView('admin');
+                try {
+                    await window.fbMethods.signInWithEmailAndPassword(window.fbAuth, email, password);
+                    setView('admin');
+                } catch (error) {
+                    alert("Acesso Negado. Verifique o email e senha cadastrados no Firebase.");
+                }
             };
 
-            const handleLogout = () => {
-                // Aqui entrará o: signOut(auth)
-                setIsAuthenticated(false);
+            const handleLogout = async () => {
+                await window.fbMethods.signOut(window.fbAuth);
                 setView('public');
+                setEmail(''); setPassword('');
             };
 
-            if (view === 'public') {
-                return <PublicSite navigateToAdmin={() => setView('login')} />;
-            }
+            if (view === 'public') return <PublicSite navigateToAdmin={() => setView('login')} user={user} />;
 
             if (view === 'login') {
                 return (
@@ -484,29 +834,18 @@
                             <div className="flex justify-center mb-6"><LogoOficina size={80} /></div>
                             <h2 className="text-2xl font-serif text-ouro text-center mb-6">Acesso ao Ateliê</h2>
                             <form onSubmit={handleLogin} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs text-gray-400 uppercase tracking-widest mb-1">E-mail Mágico</label>
-                                    <input type="email" required className="admin-input" placeholder="tay@oficinadalua.com" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs text-gray-400 uppercase tracking-widest mb-1">Senha Secreta</label>
-                                    <input type="password" required className="admin-input" placeholder="••••••••" />
-                                </div>
-                                <button type="submit" className="w-full bg-ouro text-adminbg font-bold py-3 rounded-lg hover:bg-ouroclaro transition-colors mt-4">
-                                    Entrar no Painel
-                                </button>
+                                <div><label className="block text-xs text-gray-400 uppercase tracking-widest mb-1">E-mail</label><input type="email" required className="admin-input" value={email} onChange={e => setEmail(e.target.value)} /></div>
+                                <div><label className="block text-xs text-gray-400 uppercase tracking-widest mb-1">Senha</label><input type="password" required className="admin-input" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                                <button type="submit" className="w-full bg-ouro text-adminbg font-bold py-3 rounded-lg hover:bg-ouroclaro mt-4">Entrar no Painel</button>
                             </form>
-                            <button onClick={() => setView('public')} className="w-full text-center text-xs text-gray-500 hover:text-white mt-6">
-                                Voltar para o site
-                            </button>
+                            <button onClick={() => setView('public')} className="w-full text-center text-xs text-gray-500 hover:text-white mt-6">Voltar para o site</button>
                         </div>
                     </div>
                 );
             }
 
-            if (view === 'admin' && isAuthenticated) {
-                return <AdminDashboard onLogout={handleLogout} />;
-            }
+            if (view === 'admin' && user && !user.isAnonymous) return <AdminDashboard onLogout={handleLogout} user={user} />;
+            else if (view === 'admin') setView('login');
 
             return null;
         }
