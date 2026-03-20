@@ -117,17 +117,14 @@
         // --- FUNÇÃO AUXILIAR: CONVERSOR GOOGLE DRIVE ---
         const parseDriveUrl = (url) => {
             if (!url) return '';
-            // Tenta pegar o ID do padrão "drive.google.com/file/d/ID/view"
             const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
             const match = url.match(driveRegex);
             if (match && match[1]) return `https://lh3.googleusercontent.com/d/${match[1]}`;
             
-            // Tenta pegar o ID do padrão "?id=ID"
             const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
             const matchId = url.match(idRegex);
             if (matchId && matchId[1]) return `https://lh3.googleusercontent.com/d/${matchId[1]}`;
             
-            // Retorna a URL original se não for do Drive (ex: Canva, Unsplash)
             return url;
         };
 
@@ -158,17 +155,23 @@
             const [section, setSection] = useState('inicio');
             const [orderForm, setOrderForm] = useState({ name: '', type: 'Arte Personalizada', idea: '' });
             const [isSubmitting, setIsSubmitting] = useState(false);
+            
             const [artworks, setArtworks] = useState([]);
+            const [patterns, setPatterns] = useState([]); // Estampas
 
             useEffect(() => {
                 if (!window.fbMethods) return;
                 const { collection, onSnapshot } = window.fbMethods;
-                const unsub = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), 
-                    (snapshot) => {
-                        setArtworks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                    }
+                
+                const unsubArtworks = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), 
+                    (snapshot) => setArtworks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
                 );
-                return () => unsub();
+                
+                const unsubPatterns = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'patterns'), 
+                    (snapshot) => setPatterns(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+                );
+
+                return () => { unsubArtworks(); unsubPatterns(); };
             }, [user]);
 
             const arts = artworks.filter(a => a.category === 'Cerâmica / Biscuit');
@@ -205,19 +208,18 @@
                 }
             };
 
-            const handleOrderClick = (art) => {
+            const handleOrderClick = (type, customIdea) => {
                 setSection('inicio');
                 setTimeout(() => {
                     const el = document.getElementById('form-encomenda');
                     if(el) el.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
-                setOrderForm({...orderForm, type: art.category, idea: `Olá! Amei a peça: ${art.name}`});
+                setOrderForm({...orderForm, type: type, idea: customIdea});
             };
 
             // COMPONENTE: Card de Obra com Carrossel de Imagens
             const ArtworkCard = ({ art }) => {
                 const [activeImg, setActiveImg] = useState(0);
-                // Previne falhas se as imagens antigas só tiverem a string "image"
                 const images = art.images && art.images.length > 0 ? art.images : (art.image ? [art.image] : []);
 
                 return (
@@ -229,7 +231,6 @@
                                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic font-sans">Sem Imagem</div>
                             )}
                             
-                            {/* Navegação de bolinhas para Múltiplas Imagens */}
                             {images.length > 1 && (
                                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
                                     {images.map((_, idx) => (
@@ -249,7 +250,7 @@
                                 </div>
                             </div>
                             <p className="font-sans text-slate-300 font-light block text-sm flex-1 leading-relaxed whitespace-pre-line">{art.desc}</p>
-                            <button onClick={() => handleOrderClick(art)} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
+                            <button onClick={() => handleOrderClick(art.category, `Olá! Amei a peça: ${art.name}`)} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro mt-4 hover:bg-ouro hover:text-fundo transition-all">Encomendar Magia</button>
                         </div>
                     </div>
                 );
@@ -282,14 +283,28 @@
                         <div className="flex gap-10 font-sans text-xs uppercase tracking-[0.2em] font-bold">
                             <button onClick={() => setSection('inicio')} className={section === 'inicio' ? 'text-ouro border-b-2 border-ouro' : 'text-slate-400 hover:text-ouro transition-colors pb-0.5 border-b-2 border-transparent'}>Artes</button>
                             <button onClick={() => setSection('pinturas')} className={section === 'pinturas' ? 'text-ouro border-b-2 border-ouro' : 'text-slate-400 hover:text-ouro transition-colors pb-0.5 border-b-2 border-transparent'}>Pinturas</button>
+                            <button onClick={() => setSection('cadernos')} className={section === 'cadernos' ? 'text-ouro border-b-2 border-ouro' : 'text-slate-400 hover:text-ouro transition-colors pb-0.5 border-b-2 border-transparent'}>Cadernos</button>
                             <button onClick={() => setSection('sobre')} className={section === 'sobre' ? 'text-ouro border-b-2 border-ouro' : 'text-slate-400 hover:text-ouro transition-colors pb-0.5 border-b-2 border-transparent'}>Sobre a Tay</button>
                         </div>
                     </nav>
 
                     <nav className="md:hidden fixed bottom-0 w-full h-20 glass-nav z-50 border-t flex justify-around items-center px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-                        <button onClick={() => setSection('inicio')} className={`flex flex-col items-center gap-1 ${section === 'inicio' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Artes</span></button>
-                        <button onClick={() => setSection('pinturas')} className={`flex flex-col items-center gap-1 ${section === 'pinturas' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Pinturas</span></button>
-                        <button onClick={() => setSection('sobre')} className={`flex flex-col items-center gap-1 ${section === 'sobre' ? 'text-ouro' : 'text-slate-400'}`}><span className="text-[10px] font-bold uppercase tracking-widest">Sobre</span></button>
+                        <button onClick={() => setSection('inicio')} className={`flex flex-col items-center gap-1 ${section === 'inicio' ? 'text-ouro' : 'text-slate-400'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Artes</span>
+                        </button>
+                        <button onClick={() => setSection('pinturas')} className={`flex flex-col items-center gap-1 ${section === 'pinturas' ? 'text-ouro' : 'text-slate-400'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Pinturas</span>
+                        </button>
+                        <button onClick={() => setSection('cadernos')} className={`flex flex-col items-center gap-1 ${section === 'cadernos' ? 'text-ouro' : 'text-slate-400'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Cadernos</span>
+                        </button>
+                        <button onClick={() => setSection('sobre')} className={`flex flex-col items-center gap-1 ${section === 'sobre' ? 'text-ouro' : 'text-slate-400'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Sobre</span>
+                        </button>
                     </nav>
 
                     <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 pt-32 md:pt-12 fade-in">
@@ -359,6 +374,70 @@
                                 )}
                             </div>
                         )}
+
+                        {section === 'cadernos' && (
+                            <div className="space-y-20 fade-in">
+                                <div className="text-center space-y-8">
+                                    <h2 className="font-serif text-5xl md:text-6xl font-bold text-ouro leading-tight">Cadernos Artesanais:<br/>Onde Suas Histórias Começam</h2>
+                                    <p className="text-slate-300 font-light text-lg max-w-3xl mx-auto leading-relaxed">
+                                        Um caderno feito à mão é mais que um objeto: é um convite. Um refúgio para suas ideias, sonhos, desenhos e planos. Cada caderno da Oficina da Lua é criado individualmente, com técnicas de costura artesanal e materiais escolhidos a dedo, garantindo uma peça única, resistente e cheia de personalidade para te acompanhar na jornada.
+                                    </p>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="bg-card p-8 rounded-3xl border border-ouro/20 shadow-lg">
+                                        <h4 className="font-serif text-xl font-bold text-ouro mb-3 flex items-center gap-2">📄 Papel Pólen 90g</h4>
+                                        <p className="text-slate-300 text-sm leading-relaxed font-light">São 80 folhas (160 páginas!) de altíssima qualidade. O tom levemente amarelado conforta os olhos e a textura macia é perfeita para canetas, tinta acrílica ou lápis. Só não recomendamos o uso de hidrocor, canetas à base de álcool e técnicas molhadas.</p>
+                                    </div>
+                                    <div className="bg-card p-8 rounded-3xl border border-ouro/20 shadow-lg">
+                                        <h4 className="font-serif text-xl font-bold text-ouro mb-3 flex items-center gap-2">🧵 Costura Manual Resistente</h4>
+                                        <p className="text-slate-300 text-sm leading-relaxed font-light">A costura artesanal, feita com linha encerada, garante que seu caderno tenha uma abertura completa de 180º, tornando o uso muito mais confortável, além de ser super durável.</p>
+                                    </div>
+                                    <div className="bg-card p-8 rounded-3xl border border-ouro/20 shadow-lg">
+                                        <h4 className="font-serif text-xl font-bold text-ouro mb-3 flex items-center gap-2">🛡️ Acabamento de Proteção</h4>
+                                        <p className="text-slate-300 text-sm leading-relaxed font-light">As cantoneiras de metal protegem as quinas do desgaste do dia a dia e adicionam um toque de elegância vintage. O elástico colorido garante que tudo fique seguro e no lugar.</p>
+                                    </div>
+                                    <div className="bg-card p-8 rounded-3xl border border-ouro/20 shadow-lg">
+                                        <h4 className="font-serif text-xl font-bold text-ouro mb-3 flex items-center gap-2">✨ Detalhes que encantam</h4>
+                                        <p className="text-slate-300 text-sm leading-relaxed font-light">Todas as folhas do miolo possuem cantos arredondados, um cuidado que evita o desgaste e as "orelhas" nas pontas do papel. E cada caderno começa com uma folha de rosto em papel kraft 120g, que adiciona um toque rústico e protege seu miolo.</p>
+                                    </div>
+                                </div>
+
+                                <div className="text-center space-y-6 pt-16 border-t border-ouro/20">
+                                    <h3 className="font-serif text-4xl font-bold text-ouro">Crie um caderno com a sua cara</h3>
+                                    <p className="text-slate-300 font-light text-lg max-w-2xl mx-auto leading-relaxed">
+                                        A parte mais divertida! Escolha uma das estampas disponíveis abaixo para a sua capa. Todas são de tecido tricoline 100% algodão, aplicadas com muito cuidado para um acabamento perfeito.<br/><br/>
+                                        <span className="text-sm italic text-gray-400">(Também faço capas personalizadas com artes e de outros estilos, mas o pedido é feito via orçamento e os preços podem variar.)</span>
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4">
+                                    {patterns.length === 0 ? (
+                                        <p className="col-span-full text-slate-500 italic text-center">Nenhuma estampa cadastrada no momento.</p>
+                                    ) : (
+                                        patterns.map(pat => (
+                                            <div key={pat.id} className="bg-card border border-ouro/10 rounded-2xl overflow-hidden shadow-lg group flex flex-col hover:border-ouro/50 transition-colors">
+                                                <div className="aspect-[3/4] bg-slate-800 relative">
+                                                    {pat.image ? (
+                                                        <img src={pat.image} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">Sem Imagem</div>
+                                                    )}
+                                                </div>
+                                                <div className="p-4 flex flex-col flex-1">
+                                                    <h4 className="font-sans font-bold text-ouro text-sm mb-1 uppercase tracking-wider">{pat.name}</h4>
+                                                    <p className="text-xs text-slate-400 font-light mb-4 line-clamp-2">{pat.desc}</p>
+                                                    <button onClick={() => handleOrderClick('Caderno Artesanal Personalizado', `Olá! Quero montar um caderno com a estampa: ${pat.name}`)} 
+                                                            className="mt-auto w-full font-sans text-[9px] uppercase tracking-[0.2em] font-bold border border-ouro/30 py-2.5 rounded-lg text-ouro hover:bg-ouro hover:text-fundo transition-all">
+                                                        Quero esta Estampa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         
                         {section === 'sobre' && (
                             <div className="text-center fade-in space-y-8 max-w-2xl mx-auto">
@@ -390,20 +469,23 @@
             const [supplies, setSupplies] = useState([]);
             const [artworks, setArtworks] = useState([]);
             const [collectionsList, setCollectionsList] = useState([]);
+            const [patterns, setPatterns] = useState([]); // Estampas
 
             // Estado Form Insumos
             const [newSupName, setNewSupName] = useState('');
             const [newSupQty, setNewSupQty] = useState('');
             const [newSupUnit, setNewSupUnit] = useState('g');
             const [newSupThreshold, setNewSupThreshold] = useState('');
-            
-            // Estado Edição Rápida Insumos
             const [editingSupId, setEditingSupId] = useState(null);
             const [editingSupQty, setEditingSupQty] = useState('');
 
-            // Estado Form Obras (Estoque) - Agora com suporte a Múltiplas Imagens
+            // Estado Form Obras (Estoque)
             const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', images: ['', '', '', ''], category: 'Cerâmica / Biscuit' });
             const [editingArtworkId, setEditingArtworkId] = useState(null); 
+
+            // Estado Form Estampas (Cadernos)
+            const [patForm, setPatForm] = useState({ name: '', desc: '', image: '' });
+            const [editingPatId, setEditingPatId] = useState(null);
 
             // Estado Modal Encomenda
             const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -453,7 +535,11 @@
                     }
                 );
 
-                return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); unsubCollections(); };
+                const unsubPatterns = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'patterns'), 
+                    (snapshot) => setPatterns(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+                );
+
+                return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); unsubCollections(); unsubPatterns(); };
             }, [user]);
 
             const deliveredOrders = orders.filter(o => o.status === 'Entregue');
@@ -461,20 +547,53 @@
             const totalCost = deliveredOrders.reduce((sum, o) => sum + (Number(o.cost) || 0), 0);
             const totalProfit = totalRevenue - totalCost;
 
-            // --- FUNÇÕES DE ESTOQUE/OBRAS (MÚLTIPLAS IMAGENS) ---
+            // --- FUNÇÕES DE ESTAMPAS (PATTERNS) ---
+            const handleAddPattern = async (e) => {
+                e.preventDefault();
+                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
+                const processedImage = parseDriveUrl(patForm.image);
+
+                if (editingPatId) {
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'patterns', editingPatId), {
+                        ...patForm, image: processedImage
+                    });
+                    setEditingPatId(null);
+                    alert("Estampa atualizada com sucesso!");
+                } else {
+                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'patterns'), {
+                        ...patForm, image: processedImage, createdAt: new Date().toISOString()
+                    });
+                    alert("Nova estampa adicionada ao catálogo!");
+                }
+                setPatForm({ name: '', desc: '', image: '' });
+            };
+
+            const handleEditPattern = (pat) => {
+                setPatForm({ name: pat.name, desc: pat.desc, image: pat.image });
+                setEditingPatId(pat.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const cancelEditPattern = () => {
+                setPatForm({ name: '', desc: '', image: '' });
+                setEditingPatId(null);
+            };
+
+            const handleDeletePattern = async (id) => {
+                if(!confirm("Remover estampa permanentemente do site?")) return;
+                const { deleteDoc, doc } = window.fbMethods;
+                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'patterns', id));
+            };
+
+            // --- FUNÇÕES DE ESTOQUE/OBRAS ---
             const handleAddArtwork = async (e) => {
                 e.preventDefault();
                 const { addDoc, updateDoc, doc, collection } = window.fbMethods;
                 
-                // Pré-processa as imagens convertendo os links do Drive
                 const processedImages = (artForm.images || []).map(parseDriveUrl).filter(url => url.trim() !== '');
-                const mainImage = processedImages.length > 0 ? processedImages[0] : ''; // Fallback de segurança
+                const mainImage = processedImages.length > 0 ? processedImages[0] : ''; 
 
-                const finalData = {
-                    ...artForm,
-                    images: processedImages,
-                    image: mainImage 
-                };
+                const finalData = { ...artForm, images: processedImages, image: mainImage };
 
                 if (editingArtworkId) {
                     await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', editingArtworkId), finalData);
@@ -490,7 +609,6 @@
             };
 
             const handleEditArtwork = (art) => {
-                // Recupera as imagens ou preenche até 4 espaços vazios
                 const currentImages = art.images && art.images.length > 0 ? art.images : (art.image ? [art.image] : []);
                 const filledImages = [...currentImages];
                 while(filledImages.length < 4) filledImages.push('');
@@ -692,6 +810,9 @@
                             <button onClick={() => setActiveTab('colecoes')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'colecoes' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
                                 ✨ Coleções & Lançamentos
                             </button>
+                            <button onClick={() => setActiveTab('estampas')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'estampas' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
+                                📔 Estampas (Cadernos)
+                            </button>
                             <button onClick={() => setActiveTab('insumos')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'insumos' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🎨 Insumos</button>
                             <button onClick={() => setActiveTab('estoque')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'estoque' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Estoque Site Público</button>
                         </nav>
@@ -880,7 +1001,6 @@
                                                         <span className="flex items-center gap-1">🧩 {(col.pieces || []).length} Peças</span>
                                                         <span>{progress}% Concluído</span>
                                                     </div>
-                                                    {/* Barra de Progresso */}
                                                     <div className="w-full bg-gray-800 h-1.5 mt-2 rounded-full overflow-hidden">
                                                         <div className="bg-ouro h-full transition-all duration-500" style={{width: `${progress}%`}}></div>
                                                     </div>
@@ -892,6 +1012,62 @@
                                             </div>
                                         )
                                     })}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'estampas' && (
+                            <div className="space-y-6 fade-in">
+                                <h2 className="text-2xl font-serif text-white">Catálogo de Estampas (Cadernos)</h2>
+                                <p className="text-sm text-gray-400">Adicione aqui os tecidos e acabamentos disponíveis para a personalização dos cadernos.</p>
+                                
+                                <form onSubmit={handleAddPattern} className="bg-admincard p-6 rounded-xl border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Nome da Estampa</label>
+                                        <input type="text" className="admin-input" required value={patForm.name} onChange={e => setPatForm({...patForm, name: e.target.value})} placeholder="Ex: Cogumelos Mágicos" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Link da Imagem</label>
+                                        <input type="url" className="admin-input" required value={patForm.image} onChange={e => setPatForm({...patForm, image: e.target.value})} placeholder="URL do Google Drive..." />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs text-gray-400 uppercase mb-1">Descrição do Acabamento</label>
+                                        <textarea className="admin-input h-16" required value={patForm.desc} onChange={e => setPatForm({...patForm, desc: e.target.value})} placeholder="Ex: Tecido tricoline 100% algodão com detalhes..."></textarea>
+                                    </div>
+                                    <div className="md:col-span-2 flex gap-2 mt-2">
+                                        <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-3 rounded-lg hover:bg-ouroclaro flex-1 transition">
+                                            {editingPatId ? 'Salvar Alterações' : '+ Adicionar Estampa'}
+                                        </button>
+                                        {editingPatId && (
+                                            <button type="button" onClick={cancelEditPattern} className="bg-gray-700 text-white font-bold px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                                                Cancelar Edição
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+
+                                <div className="grid md:grid-cols-4 gap-6 pt-4">
+                                    {patterns.map(pat => (
+                                        <div key={pat.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg flex flex-col">
+                                            <div className="aspect-[3/4] bg-gray-900 relative">
+                                                {pat.image ? (
+                                                    <img src={pat.image} className="w-full h-full object-cover opacity-80" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">Sem imagem</div>
+                                                )}
+                                            </div>
+                                            <div className="p-4 flex flex-col gap-2 flex-1">
+                                                <div>
+                                                    <h4 className="font-sans font-bold text-ouro text-sm uppercase tracking-wider truncate" title={pat.name}>{pat.name}</h4>
+                                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2" title={pat.desc}>{pat.desc}</p>
+                                                </div>
+                                                <div className="flex gap-2 mt-auto pt-4 border-t border-gray-700">
+                                                    <button onClick={() => handleEditPattern(pat)} className="flex-1 py-1 text-gray-300 hover:text-white text-xs font-bold uppercase transition">Editar</button>
+                                                    <button onClick={() => handleDeletePattern(pat.id)} className="flex-1 py-1 text-red-500 hover:text-red-400 text-xs font-bold uppercase transition">Excluir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
