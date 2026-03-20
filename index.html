@@ -344,7 +344,6 @@
                                                 <option>Cerâmica / Biscuit</option>
                                                 <option>Pintura / Ilustração</option>
                                                 <option>Caderno Artesanal Personalizado</option>
-                                                <option>Orçamento para Tatuagem</option>
                                             </select>
                                             <textarea placeholder="Conte-me a sua ideia! (Cores, referências, sentimentos da peça...)" 
                                                       className="form-input font-sans text-sm h-32 resize-none"
@@ -456,9 +455,43 @@
                         )}
                         
                         {section === 'sobre' && (
-                            <div className="text-center fade-in space-y-8 max-w-2xl mx-auto">
-                                <h2 className="font-serif text-5xl font-bold text-ouro">Seja bem-vindo ao meu mundo</h2>
-                                <p className="text-slate-300 font-light text-lg">Oi, eu sou a Tay! Aqui, a arte é a linguagem que uso para explorar a natureza, o misticismo e a beleza dos corpos femininos.</p>
+                            <div className="space-y-20 fade-in">
+                                <div className="flex flex-col md:flex-row gap-12 items-center max-w-6xl mx-auto">
+                                    <div className="w-full md:w-1/2 relative">
+                                        <div className="aspect-[4/5] rounded-[3rem] overflow-hidden border border-ouro/30 shadow-2xl relative z-10">
+                                            <img src={parseDriveUrl("https://drive.google.com/file/d/1dhsZfmCnySstvLAa_HboD-oPuwxSlduD/view?usp=sharing")} className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000" alt="Taylise Ink Arte Digital" />
+                                        </div>
+                                        <div className="absolute -inset-4 border border-ouro/20 rounded-[3.5rem] -z-10 animate-pulse"></div>
+                                    </div>
+                                    
+                                    <div className="w-full md:w-1/2 space-y-8 text-center md:text-left">
+                                        <h2 className="font-serif text-5xl md:text-6xl font-bold text-ouro leading-tight">Bem-vindo(a) ao<br/>Meu Universo</h2>
+                                        <p className="text-slate-300 font-light text-lg leading-relaxed">
+                                            Oi, eu sou a Tay! Aqui, a arte é a linguagem que uso para explorar a natureza, o misticismo e a beleza dos corpos femininos. Tudo o que você verá nasce de um lugar de afeto e de um olhar que encontra magia no sensível e no sombrio.
+                                        </p>
+                                        
+                                        <div className="space-y-6 pt-6 border-t border-ouro/20 text-left">
+                                            <div>
+                                                <h4 className="font-serif text-xl text-ouro mb-2 flex items-center gap-2">✦ A Artista</h4>
+                                                <p className="text-slate-400 font-light text-sm leading-relaxed">
+                                                    Sou artista visual independente, mestranda e tatuadora em formação. Misturo minha paixão por artes, natureza e misticismo. Trabalho com grafite, pintura e tattoo, sempre com uma pegada dark e delicada.
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-serif text-xl text-ouro mb-2 flex items-center gap-2">✦ Taylise Ink Studio</h4>
+                                                <p className="text-slate-400 font-light text-sm leading-relaxed">
+                                                    Este é o meu estúdio, um espaço onde a tinta encontra a alma. Como tatuadora, o meu foco é o blackwork, trazendo à pele elementos místicos, botânicos e a força do feminino.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="pt-8 flex justify-center md:justify-start">
+                                            <button onClick={() => window.open('https://tayliseink.vercel.app/', '_blank')} className="font-sans text-xs uppercase tracking-[0.2em] font-bold border border-ouro/50 py-4 px-8 rounded-xl text-ouro hover:bg-ouro hover:text-fundo transition-all">
+                                                Acessar Site do Estúdio
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </main>
