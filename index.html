@@ -376,6 +376,7 @@
 
             // Estado Form Obras (Estoque)
             const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+            const [editingArtworkId, setEditingArtworkId] = useState(null); // ID da obra sendo editada
 
             // Estado Modal Encomenda
             const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -448,7 +449,7 @@
             };
 
             const handleDeleteSupply = async (id) => {
-                if(!confirm("Deletar insumo?")) return;
+                if(!confirm("Deletar insumo permanentemente?")) return;
                 const { deleteDoc, doc } = window.fbMethods;
                 await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'supplies', id));
             };
@@ -456,16 +457,36 @@
             // --- FUNÇÕES DE ESTOQUE/OBRAS ---
             const handleAddArtwork = async (e) => {
                 e.preventDefault();
-                const { addDoc, collection } = window.fbMethods;
-                await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), {
-                    ...artForm, createdAt: new Date().toISOString()
-                });
+                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
+                
+                if (editingArtworkId) {
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', editingArtworkId), {
+                        ...artForm
+                    });
+                    setEditingArtworkId(null);
+                    alert("Obra atualizada com sucesso!");
+                } else {
+                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks'), {
+                        ...artForm, createdAt: new Date().toISOString()
+                    });
+                    alert("Obra adicionada ao site!");
+                }
                 setArtForm({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
-                alert("Obra adicionada ao site!");
+            };
+
+            const handleEditArtwork = (art) => {
+                setArtForm({ name: art.name, desc: art.desc, price: art.price, image: art.image, category: art.category });
+                setEditingArtworkId(art.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Faz a tela rolar para cima para o form
+            };
+
+            const cancelEditArtwork = () => {
+                setArtForm({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
+                setEditingArtworkId(null);
             };
 
             const handleDeleteArtwork = async (id) => {
-                if(!confirm("Remover obra do site público?")) return;
+                if(!confirm("Remover obra permanentemente do site público?")) return;
                 const { deleteDoc, doc } = window.fbMethods;
                 await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'artworks', id));
             };
@@ -507,6 +528,12 @@
                 if (currentStatus === 'Entregue') return;
                 const { updateDoc, doc } = window.fbMethods;
                 await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id), { status: nextStatus });
+            };
+
+            const handleDeleteOrder = async (id) => {
+                if(!confirm("Excluir esta encomenda permanentemente?")) return;
+                const { deleteDoc, doc } = window.fbMethods;
+                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id));
             };
 
             // --- LÓGICA DO CALENDÁRIO / AGENDA ---
@@ -567,6 +594,7 @@
                                         <th className="p-4 font-normal">Data Finalização</th>
                                         <th className="p-4 font-normal">Valor</th>
                                         <th className="p-4 font-normal text-green-400">Lucro</th>
+                                        <th className="p-4 font-normal text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -581,6 +609,9 @@
                                             </td>
                                             <td className="p-4 text-white">R$ {Number(order.price || 0).toFixed(2)}</td>
                                             <td className="p-4 text-green-400 font-bold">R$ {(Number(order.price || 0) - Number(order.cost || 0)).toFixed(2)}</td>
+                                            <td className="p-4 text-right">
+                                                <button onClick={() => handleDeleteOrder(order.id)} className="text-xs text-red-500 hover:text-white px-2 py-1 rounded border border-red-900/50 hover:bg-red-900/50" title="Excluir Histórico">Excluir</button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -752,6 +783,7 @@
                                                     <td className="p-4 text-right space-x-2 flex justify-end">
                                                         <button onClick={() => openOrderModal(order)} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700 hover:bg-gray-700">Editar</button>
                                                         <button onClick={() => handleAdvanceOrder(order.id, order.status)} className="text-xs bg-ouro/10 text-ouro px-2 py-1 rounded border border-ouro/30 hover:bg-ouro/20">Avançar ❯</button>
+                                                        <button onClick={() => handleDeleteOrder(order.id)} className="text-xs text-red-500 hover:text-white px-2 py-1 rounded border border-red-900/50 hover:bg-red-900/50" title="Excluir">✕</button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -838,7 +870,7 @@
                         {activeTab === 'estoque' && (
                             <div className="space-y-6 fade-in">
                                 <h2 className="text-2xl font-serif text-white">Obras no Site Público</h2>
-                                <p className="text-sm text-gray-400">Adicione suas peças aqui e elas aparecerão instantaneamente no seu site para os clientes.</p>
+                                <p className="text-sm text-gray-400">Gerencie as obras que estão disponíveis no seu portfólio público.</p>
                                 
                                 <form onSubmit={handleAddArtwork} className="bg-admincard p-6 rounded-xl border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -864,22 +896,34 @@
                                         <label className="block text-xs text-gray-400 uppercase mb-1">Descrição</label>
                                         <textarea className="admin-input" required value={artForm.desc} onChange={e => setArtForm({...artForm, desc: e.target.value})}></textarea>
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-3 rounded-lg hover:bg-ouroclaro w-full">Publicar Obra no Site</button>
+                                    <div className="md:col-span-2 flex gap-2 mt-2">
+                                        <button type="submit" className="bg-ouro text-adminbg font-bold px-6 py-3 rounded-lg hover:bg-ouroclaro flex-1 transition">
+                                            {editingArtworkId ? 'Salvar Alterações' : 'Publicar Nova Obra'}
+                                        </button>
+                                        {editingArtworkId && (
+                                            <button type="button" onClick={cancelEditArtwork} className="bg-gray-700 text-white font-bold px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                                                Cancelar Edição
+                                            </button>
+                                        )}
                                     </div>
                                 </form>
 
                                 <div className="grid md:grid-cols-3 gap-6 pt-4">
                                     {artworks.map(art => (
-                                        <div key={art.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg group">
+                                        <div key={art.id} className="bg-admincard border border-gray-800 rounded-xl overflow-hidden shadow-lg group flex flex-col">
                                             <div className="aspect-square bg-gray-900 relative">
                                                 <img src={art.image} className="w-full h-full object-cover opacity-80" />
                                                 <span className="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded uppercase tracking-widest">{art.category.split('/')[0]}</span>
                                             </div>
-                                            <div className="p-4">
-                                                <h4 className="font-serif text-lg text-ouro truncate">{art.name}</h4>
-                                                <p className="text-sm text-white font-bold mb-2">R$ {art.price}</p>
-                                                <button onClick={() => handleDeleteArtwork(art.id)} className="w-full py-2 border border-red-900/50 text-red-400 rounded hover:bg-red-900/30 text-xs font-bold uppercase transition">Remover do Site</button>
+                                            <div className="p-4 flex flex-col gap-2 flex-1">
+                                                <div>
+                                                    <h4 className="font-serif text-lg text-ouro truncate" title={art.name}>{art.name}</h4>
+                                                    <p className="text-sm text-white font-bold mb-2">R$ {art.price}</p>
+                                                </div>
+                                                <div className="flex gap-2 mt-auto pt-2">
+                                                    <button onClick={() => handleEditArtwork(art)} className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-gray-700 text-xs font-bold uppercase transition">Editar</button>
+                                                    <button onClick={() => handleDeleteArtwork(art.id)} className="flex-1 py-2 border border-red-900/50 text-red-400 rounded hover:bg-red-900/30 text-xs font-bold uppercase transition">Excluir</button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
