@@ -363,6 +363,7 @@
             const [orders, setOrders] = useState([]);
             const [supplies, setSupplies] = useState([]);
             const [artworks, setArtworks] = useState([]);
+            const [collectionsList, setCollectionsList] = useState([]);
 
             // Estado Form Insumos
             const [newSupName, setNewSupName] = useState('');
@@ -376,12 +377,27 @@
 
             // Estado Form Obras (Estoque)
             const [artForm, setArtForm] = useState({ name: '', desc: '', price: '', image: '', category: 'Cerâmica / Biscuit' });
-            const [editingArtworkId, setEditingArtworkId] = useState(null); // ID da obra sendo editada
+            const [editingArtworkId, setEditingArtworkId] = useState(null); 
 
             // Estado Modal Encomenda
             const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
             const [editingOrder, setEditingOrder] = useState(null);
             const [orderForm, setOrderForm] = useState({ client: '', item: '', idea: '', status: 'Novo', deadline: '', price: '', cost: '' });
+
+            // --- ESTADOS DE COLEÇÕES ---
+            const defaultTasks = [
+                { id: 1, title: 'Pesquisa e Referências', done: false },
+                { id: 2, title: 'Comprar Insumos Específicos', done: false },
+                { id: 3, title: 'Produção das Peças', done: false },
+                { id: 4, title: 'Fotografia das Obras', done: false },
+                { id: 5, title: 'Precificação e Cadastro', done: false },
+                { id: 6, title: 'Campanha/Spoilers no Instagram', done: false },
+            ];
+            const [isColModalOpen, setIsColModalOpen] = useState(false);
+            const [editingColId, setEditingColId] = useState(null);
+            const [colForm, setColForm] = useState({ name: '', theme: '', status: 'Ideação', targetDate: '', pieces: [], tasks: defaultTasks });
+            const [newPieceName, setNewPieceName] = useState('');
+            const [newTaskName, setNewTaskName] = useState('');
 
             // Busca de dados em tempo real
             useEffect(() => {
@@ -404,7 +420,15 @@
                     (snapshot) => setArtworks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
                 );
 
-                return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); };
+                const unsubCollections = onSnapshot(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections'), 
+                    (snapshot) => {
+                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                        setCollectionsList(data);
+                    }
+                );
+
+                return () => { unsubOrders(); unsubSupplies(); unsubArtworks(); unsubCollections(); };
             }, [user]);
 
             // --- CÁLCULOS FINANCEIROS ---
@@ -477,7 +501,7 @@
             const handleEditArtwork = (art) => {
                 setArtForm({ name: art.name, desc: art.desc, price: art.price, image: art.image, category: art.category });
                 setEditingArtworkId(art.id);
-                window.scrollTo({ top: 0, behavior: 'smooth' }); // Faz a tela rolar para cima para o form
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             const cancelEditArtwork = () => {
@@ -536,7 +560,75 @@
                 await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'orders', id));
             };
 
-            // --- LÓGICA DO CALENDÁRIO / AGENDA ---
+            // --- FUNÇÕES DE COLEÇÕES ---
+            const openColModal = (col = null) => {
+                if (col) {
+                    setEditingColId(col.id);
+                    setColForm({ ...col });
+                } else {
+                    setEditingColId(null);
+                    setColForm({ name: '', theme: '', status: 'Ideação', targetDate: '', pieces: [], tasks: defaultTasks });
+                }
+                setNewPieceName('');
+                setNewTaskName('');
+                setIsColModalOpen(true);
+            };
+
+            const handleAddPiece = () => {
+                if (!newPieceName) return;
+                setColForm({
+                    ...colForm, 
+                    pieces: [...colForm.pieces, { id: Date.now(), name: newPieceName, done: false }]
+                });
+                setNewPieceName('');
+            };
+
+            const handleAddTask = () => {
+                if (!newTaskName) return;
+                setColForm({
+                    ...colForm, 
+                    tasks: [...colForm.tasks, { id: Date.now(), title: newTaskName, done: false }]
+                });
+                setNewTaskName('');
+            };
+
+            const togglePiece = (pId) => {
+                setColForm({...colForm, pieces: colForm.pieces.map(p => p.id === pId ? {...p, done: !p.done} : p)});
+            };
+
+            const toggleTask = (tId) => {
+                setColForm({...colForm, tasks: colForm.tasks.map(t => t.id === tId ? {...t, done: !t.done} : t)});
+            };
+
+            const deletePiece = (pId) => {
+                setColForm({...colForm, pieces: colForm.pieces.filter(p => p.id !== pId)});
+            };
+            
+            const deleteTask = (tId) => {
+                setColForm({...colForm, tasks: colForm.tasks.filter(t => t.id !== tId)});
+            };
+
+            const handleSaveCollection = async (e) => {
+                e.preventDefault();
+                const { addDoc, updateDoc, doc, collection } = window.fbMethods;
+                
+                if (editingColId) {
+                    await updateDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', editingColId), colForm);
+                } else {
+                    await addDoc(collection(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections'), {
+                        ...colForm, createdAt: new Date().toISOString()
+                    });
+                }
+                setIsColModalOpen(false);
+            };
+
+            const handleDeleteCollection = async (id) => {
+                if(!confirm("Excluir esta coleção inteira permanentemente?")) return;
+                const { deleteDoc, doc } = window.fbMethods;
+                await deleteDoc(doc(window.fbDb, 'artifacts', appId, 'public', 'data', 'collections', id));
+            };
+
+            // --- RENDERIZADORES ---
             const renderAgenda = () => {
                 const upcoming = orders.filter(o => o.deadline && o.status !== 'Entregue');
                 
@@ -580,7 +672,6 @@
                 );
             };
 
-            // --- LÓGICA DO HISTÓRICO DE VENDAS ---
             const renderHistory = () => {
                 if (deliveredOrders.length === 0) return <p className="text-gray-500 text-sm mt-4">Nenhuma peça foi finalizada e entregue ainda.</p>;
 
@@ -649,7 +740,6 @@
                                         <textarea className="admin-input h-20" required value={orderForm.idea} onChange={e => setOrderForm({...orderForm, idea: e.target.value})}></textarea>
                                     </div>
                                     
-                                    {/* NOVOS CAMPOS FINANCEIROS */}
                                     <div className="grid grid-cols-2 gap-4 border-t border-gray-700 pt-4 mt-2">
                                         <div>
                                             <label className="block text-xs text-ouro uppercase mb-1">Valor Cobrado (R$)</label>
@@ -679,17 +769,110 @@
                         </div>
                     )}
 
-                    <aside className="w-full md:w-64 bg-admincard border-r border-gray-800 flex flex-col">
+                    {/* MODAL DE COLEÇÕES */}
+                    {isColModalOpen && (
+                        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
+                            <div className="bg-admincard p-6 rounded-2xl w-full max-w-4xl border border-ouro/30 shadow-2xl overflow-y-auto max-h-[95vh] flex flex-col">
+                                <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                                    <h3 className="text-2xl font-serif text-ouro">{editingColId ? 'Gerenciar Coleção' : 'Criar Nova Coleção'}</h3>
+                                    <button onClick={() => setIsColModalOpen(false)} className="text-gray-400 hover:text-white text-2xl">&times;</button>
+                                </div>
+                                
+                                <form onSubmit={handleSaveCollection} className="flex-1 flex flex-col lg:flex-row gap-8">
+                                    {/* Coluna Esquerda: Dados Gerais e Peças */}
+                                    <div className="flex-1 space-y-6">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Nome da Coleção</label>
+                                            <input type="text" className="admin-input text-lg" required value={colForm.name} onChange={e => setColForm({...colForm, name: e.target.value})} placeholder="Ex: Coleção Fases da Lua" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs text-gray-400 uppercase mb-1">Status</label>
+                                                <select className="admin-input" value={colForm.status} onChange={e => setColForm({...colForm, status: e.target.value})}>
+                                                    <option>Ideação</option>
+                                                    <option>Produção</option>
+                                                    <option>Marketing / Fotos</option>
+                                                    <option>Lançada</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-400 uppercase mb-1">Data Lançamento (Alvo)</label>
+                                                <input type="date" className="admin-input" value={colForm.targetDate} onChange={e => setColForm({...colForm, targetDate: e.target.value})} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 uppercase mb-1">Tema / Inspiração</label>
+                                            <textarea className="admin-input h-20" value={colForm.theme} onChange={e => setColForm({...colForm, theme: e.target.value})} placeholder="Descreva o sentimento, cores e referências..."></textarea>
+                                        </div>
+
+                                        <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700">
+                                            <h4 className="text-sm font-bold text-ouro mb-3 uppercase tracking-widest">🧩 Peças da Coleção</h4>
+                                            <div className="flex gap-2 mb-4">
+                                                <input type="text" className="admin-input flex-1" value={newPieceName} onChange={e => setNewPieceName(e.target.value)} placeholder="Nova peça (Ex: Prato Crescente)" onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddPiece())} />
+                                                <button type="button" onClick={handleAddPiece} className="bg-gray-700 text-white px-3 rounded hover:bg-gray-600 font-bold">+</button>
+                                            </div>
+                                            <ul className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                                {colForm.pieces.length === 0 && <p className="text-xs text-gray-500 italic">Nenhuma peça adicionada ainda.</p>}
+                                                {colForm.pieces.map(p => (
+                                                    <li key={p.id} className="flex justify-between items-center text-sm bg-admincard p-2 rounded border border-gray-700">
+                                                        <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                                            <input type="checkbox" checked={p.done} onChange={() => togglePiece(p.id)} className="w-4 h-4 rounded border-gray-600 text-ouro focus:ring-ouro focus:ring-offset-gray-800" />
+                                                            <span className={p.done ? 'line-through text-gray-500' : 'text-white'}>{p.name}</span>
+                                                        </label>
+                                                        <button type="button" onClick={() => deletePiece(p.id)} className="text-gray-500 hover:text-red-400">✕</button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Coluna Direita: Checklist Marketing */}
+                                    <div className="w-full lg:w-1/2 bg-gray-800/30 p-4 rounded-xl border border-gray-700 flex flex-col">
+                                        <h4 className="text-sm font-bold text-ouro mb-1 uppercase tracking-widest">✅ Checklist de Lançamento</h4>
+                                        <p className="text-[10px] text-gray-400 mb-4">Organize o marketing e produção da coleção.</p>
+                                        
+                                        <div className="flex gap-2 mb-4">
+                                            <input type="text" className="admin-input flex-1" value={newTaskName} onChange={e => setNewTaskName(e.target.value)} placeholder="Nova tarefa (Ex: Gravar Reels)" onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTask())} />
+                                            <button type="button" onClick={handleAddTask} className="bg-gray-700 text-white px-3 rounded hover:bg-gray-600 font-bold">+</button>
+                                        </div>
+                                        
+                                        <ul className="space-y-2 flex-1 overflow-y-auto pr-2">
+                                            {colForm.tasks.map(t => (
+                                                <li key={t.id} className="flex justify-between items-center text-sm bg-admincard p-2 rounded border border-gray-700 hover:border-gray-500 transition-colors">
+                                                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                                                        <input type="checkbox" checked={t.done} onChange={() => toggleTask(t.id)} className="w-4 h-4 rounded border-gray-600 text-ouro focus:ring-ouro" />
+                                                        <span className={t.done ? 'line-through text-gray-500' : 'text-white'}>{t.title}</span>
+                                                    </label>
+                                                    <button type="button" onClick={() => deleteTask(t.id)} className="text-gray-500 hover:text-red-400 ml-2">✕</button>
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <div className="mt-6 pt-4 border-t border-gray-700">
+                                            <button type="submit" className="w-full py-3 bg-ouro text-adminbg font-bold rounded-lg text-sm hover:bg-ouroclaro transition shadow-lg">
+                                                Salvar Coleção
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    <aside className="w-full md:w-64 bg-admincard border-r border-gray-800 flex flex-col z-10 relative">
                         <div className="p-6 border-b border-gray-800 flex items-center gap-3">
                             <LogoOficina size={40} />
                             <div>
                                 <h2 className="font-serif text-ouro font-bold leading-tight">Ateliê<br/>Admin</h2>
                             </div>
                         </div>
-                        <nav className="flex-1 p-4 space-y-2 text-sm">
+                        <nav className="flex-1 p-4 space-y-2 text-sm overflow-y-auto no-scrollbar">
                             <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>📅 Visão Geral & Finanças</button>
                             <button onClick={() => setActiveTab('encomendas')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'encomendas' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
                                 📦 Encomendas {orders.filter(o => o.status !== 'Entregue').length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{orders.filter(o => o.status !== 'Entregue').length}</span>}
+                            </button>
+                            <button onClick={() => setActiveTab('colecoes')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex justify-between ${activeTab === 'colecoes' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>
+                                ✨ Coleções & Lançamentos
                             </button>
                             <button onClick={() => setActiveTab('insumos')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'insumos' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🎨 Insumos</button>
                             <button onClick={() => setActiveTab('estoque')} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'estoque' ? 'bg-ouro/10 text-ouro' : 'text-gray-400 hover:bg-gray-800'}`}>🖼️ Estoque Site Público</button>
@@ -737,6 +920,61 @@
                                     </h2>
                                     <p className="text-sm text-gray-400">Tudo o que já foi marcado como 'Entregue' vem para cá.</p>
                                     {renderHistory()}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'colecoes' && (
+                            <div className="space-y-6 fade-in">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h2 className="text-2xl font-serif text-white">Coleções & Lançamentos</h2>
+                                        <p className="text-sm text-gray-400 mt-1">Organize o processo criativo, produção em lote e marketing.</p>
+                                    </div>
+                                    <button onClick={() => openColModal()} className="bg-ouro text-adminbg px-6 py-2 rounded-lg text-xs font-bold hover:bg-ouroclaro">+ Criar Coleção</button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                                    {collectionsList.length === 0 ? (
+                                        <div className="col-span-full p-8 text-center border border-dashed border-gray-700 rounded-2xl text-gray-500">
+                                            Nenhuma coleção em andamento. Clique em "+ Criar Coleção" para iniciar um novo projeto.
+                                        </div>
+                                    ) : collectionsList.map(col => {
+                                        const doneTasks = col.tasks ? col.tasks.filter(t => t.done).length : 0;
+                                        const totalTasks = col.tasks ? col.tasks.length : 0;
+                                        const progress = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+
+                                        return (
+                                            <div key={col.id} className="bg-admincard border border-gray-800 rounded-2xl overflow-hidden shadow-lg flex flex-col hover:border-gray-600 transition group cursor-pointer" onClick={() => openColModal(col)}>
+                                                <div className="p-6 flex-1">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded 
+                                                            ${col.status === 'Ideação' ? 'bg-purple-900/50 text-purple-400' : ''}
+                                                            ${col.status === 'Produção' ? 'bg-yellow-900/50 text-yellow-400' : ''}
+                                                            ${col.status === 'Marketing / Fotos' ? 'bg-blue-900/50 text-blue-400' : ''}
+                                                            ${col.status === 'Lançada' ? 'bg-green-900/50 text-green-400' : ''}
+                                                        `}>{col.status}</span>
+                                                        {col.targetDate && <span className="text-xs text-gray-500 border border-gray-700 px-2 py-1 rounded">{new Date(col.targetDate + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>}
+                                                    </div>
+                                                    <h3 className="text-xl font-serif text-ouro mb-2 group-hover:text-ouroclaro transition">{col.name}</h3>
+                                                    <p className="text-xs text-gray-400 line-clamp-2">{col.theme || "Sem tema definido"}</p>
+                                                    
+                                                    <div className="mt-6 flex items-center justify-between text-xs text-gray-400">
+                                                        <span className="flex items-center gap-1">🧩 {(col.pieces || []).length} Peças</span>
+                                                        <span>{progress}% Concluído</span>
+                                                    </div>
+                                                    {/* Barra de Progresso */}
+                                                    <div className="w-full bg-gray-800 h-1.5 mt-2 rounded-full overflow-hidden">
+                                                        <div className="bg-ouro h-full transition-all duration-500" style={{width: `${progress}%`}}></div>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-gray-800/50 px-6 py-3 flex justify-between items-center opacity-0 group-hover:opacity-100 transition">
+                                                    <span className="text-xs text-ouro font-bold uppercase tracking-widest">Editar Coleção ❯</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id); }} className="text-xs text-red-500 hover:text-red-400">Excluir</button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}
