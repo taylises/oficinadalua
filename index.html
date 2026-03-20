@@ -256,6 +256,52 @@
                 );
             };
 
+            const hardcodedAcrilica = [
+                "https://drive.google.com/file/d/1OAlb6R0-pLicXjQTIf4Rv_NABmwBCkUk/view?usp=sharing",
+                "https://drive.google.com/file/d/1WjpHXdXJkn9yFEYjffN8tDa17V4aNE-t/view?usp=sharing",
+                "https://drive.google.com/file/d/1hn116HG10Dg2yX_1MSAqoGVDFr-V0pqa/view?usp=sharing",
+                "https://drive.google.com/file/d/1DQZfy7PEriSr5Dk4Gyt0472QnE4xWzQ6/view?usp=sharing",
+                "https://drive.google.com/file/d/12CYuHJvFvch6nryiTVjKSjtuDt3J5bjZ/view?usp=sharing"
+            ].map(parseDriveUrl);
+
+            const hardcodedAquarela = [
+                "https://drive.google.com/file/d/1LkZdrijINYvANMLPoraY-7Zm-H74PTxc/view?usp=sharing",
+                "https://drive.google.com/file/d/1XjlV7QqPcrNPouvBBrwOGjCMESyws8Sp/view?usp=sharing"
+            ].map(parseDriveUrl);
+
+            const hardcodedProcesso = [
+                "https://drive.google.com/file/d/1NDKT5TI-17Xl2Fqw3GlTEfqNeHwGs5Da/view?usp=sharing",
+                "https://drive.google.com/file/d/1BLMKlAkiuH3HS3PyePctu5Npfq8xMXU2/view?usp=sharing",
+                "https://drive.google.com/file/d/1P8ER9sIM-1-50EBcO9DBg6KXDNJWhwTr/view?usp=sharing",
+                "https://drive.google.com/file/d/1DraOdzby9SnVU5R3KkQs2BhrVPtyma1o/view?usp=sharing"
+            ].map(parseDriveUrl);
+
+            const hardcodedSuspiro = [
+                "https://drive.google.com/file/d/1-RLQpG7cXrW8-pL8mv5uomWfHqHMb19P/view?usp=sharing",
+                "https://drive.google.com/file/d/1xeMV1yO9vsRU-jkftVmTKiAGnbTU0ZSo/view?usp=sharing",
+                "https://drive.google.com/file/d/1CB12s-tWguiTrmbhUfCk5KVkGwioDgQy/view?usp=sharing"
+            ].map(parseDriveUrl);
+
+            const SimpleImageCard = ({ src, art }) => {
+                const displayImage = src || (art && art.images && art.images.length > 0 ? art.images[0] : art?.image);
+                return (
+                    <div className="bg-card border border-ouro/10 rounded-2xl overflow-hidden shadow-lg group relative aspect-[4/5]">
+                        <img src={displayImage} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                        {art && (art.name || art.desc) && (
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {art.name && <h4 className="text-ouro font-serif font-bold text-sm leading-tight">{art.name}</h4>}
+                                {art.desc && <p className="text-gray-300 text-[10px] line-clamp-2 mt-1">{art.desc}</p>}
+                            </div>
+                        )}
+                    </div>
+                )
+            };
+
+            const pinturasAcrilica = artworks.filter(a => a.category === 'Pintura - Acrílica' || a.category === 'Pintura / Ilustração');
+            const pinturasAquarela = artworks.filter(a => a.category === 'Pintura - Aquarela');
+            const processos = artworks.filter(a => a.category === 'Processo Criativo');
+            const suspiros = artworks.filter(a => a.category === 'Arte de Suspiro');
+
             const stars = useMemo(() => [...Array(25)].map((_, i) => ({
                 id: i, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, size: Math.random() * 15 + 8, delay: `${Math.random() * 5}s`
             })), []);
@@ -359,18 +405,84 @@
                         )}
 
                         {section === 'pinturas' && (
-                            <div className="space-y-12 fade-in">
-                                <div className="text-center space-y-8">
-                                    <h2 className="font-serif text-5xl font-bold text-ouro">Galeria de Pinturas</h2>
-                                    <p className="text-slate-300 font-light">A explorar o lado sombrio e sensível da estética.</p>
-                                </div>
-                                {paintings.length === 0 ? (
-                                    <p className="text-slate-500 italic text-center">Nenhuma pintura no stock no momento.</p>
-                                ) : (
-                                    <div className="grid md:grid-cols-2 gap-10">
-                                        {paintings.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
+                            <div className="space-y-20 fade-in">
+                                <div className="text-center space-y-8 max-w-3xl mx-auto">
+                                    <h2 className="font-serif text-5xl md:text-6xl font-bold text-ouro leading-tight">Pinturas & Ilustrações</h2>
+                                    <p className="text-slate-300 font-light text-lg leading-relaxed">
+                                        Faço pinturas sob encomenda de diversos tamanhos e temas. Aqui você pode conferir algumas obras prontas, mergulhar no meu processo criativo e ver minhas "artes de suspiro" — aqueles estudos e criações livres que nascem entre um projeto oficial e outro.
+                                    </p>
+                                    <div className="pt-4">
+                                        <button onClick={() => handleOrderClick('Pintura / Ilustração', 'Olá Tay! Tenho uma ideia exclusiva para uma pintura/ilustração e gostaria de fazer um orçamento.')} 
+                                                className="font-sans text-xs uppercase tracking-[0.2em] font-bold border border-ouro/50 bg-ouro/10 py-4 px-8 rounded-xl text-ouro hover:bg-ouro hover:text-fundo transition-all shadow-[0_0_15px_rgba(220,168,104,0.2)]">
+                                            Peça sua ideia exclusiva
+                                        </button>
                                     </div>
-                                )}
+                                </div>
+
+                                <div className="space-y-12">
+                                    <div className="border-b border-ouro/20 pb-4">
+                                        <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Obras em Tinta Acrílica</h3>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-10">
+                                        {pinturasAcrilica.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
+                                        
+                                        {/* Fallback temporário para as imagens fixas, caso não tenham sido adicionadas no banco */}
+                                        {pinturasAcrilica.length === 0 && hardcodedAcrilica.map((src, idx) => (
+                                            <div key={`acrilica-fixa-${idx}`} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
+                                                <div className="aspect-[4/5] bg-slate-800 relative">
+                                                    <img src={src} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
+                                                </div>
+                                                <div className="p-8 space-y-4 flex-1 flex flex-col justify-center items-center text-center">
+                                                    <p className="text-slate-400 italic text-xs">(Peça ainda sem título no catálogo)</p>
+                                                    <button onClick={() => handleOrderClick('Pintura - Acrílica', 'Olá! Gostaria de falar sobre uma pintura em tinta acrílica que vi no site.')} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro hover:bg-ouro hover:text-fundo transition-all">Encomendar Similar</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-12 pt-8">
+                                    <div className="border-b border-ouro/20 pb-4">
+                                        <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Obras em Aquarela</h3>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-10">
+                                        {pinturasAquarela.map(paint => <ArtworkCard key={paint.id} art={paint} />)}
+                                        
+                                        {pinturasAquarela.length === 0 && hardcodedAquarela.map((src, idx) => (
+                                            <div key={`aquarela-fixa-${idx}`} className="group bg-card border border-ouro/10 rounded-[2.5rem] overflow-hidden flex flex-col hover:border-ouro/50 transition-all shadow-xl">
+                                                <div className="aspect-[4/5] bg-slate-800 relative">
+                                                    <img src={src} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
+                                                </div>
+                                                <div className="p-8 space-y-4 flex-1 flex flex-col justify-center items-center text-center">
+                                                    <p className="text-slate-400 italic text-xs">(Peça ainda sem título no catálogo)</p>
+                                                    <button onClick={() => handleOrderClick('Pintura - Aquarela', 'Olá! Gostaria de falar sobre uma pintura em aquarela que vi no site.')} className="w-full font-sans text-[10px] uppercase tracking-[0.3em] font-bold border border-ouro/30 py-4 rounded-xl text-ouro hover:bg-ouro hover:text-fundo transition-all">Encomendar Similar</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8 pt-8">
+                                    <div className="border-b border-ouro/20 pb-4">
+                                        <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Processo Criativo</h3>
+                                        <p className="text-sm text-slate-400 mt-2">Um pouco dos bastidores de como as peças ganham vida.</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {processos.map(art => <SimpleImageCard key={art.id} art={art} />)}
+                                        {processos.length === 0 && hardcodedProcesso.map((src, idx) => <SimpleImageCard key={`proc-${idx}`} src={src} />)}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8 pt-8">
+                                    <div className="border-b border-ouro/20 pb-4">
+                                        <h3 className="font-serif text-3xl font-bold tracking-tighter text-ouro">Artes de Suspiro</h3>
+                                        <p className="text-sm text-slate-400 mt-2">Estudos, rascunhos e criações livres que fluem da mente para o papel.</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                        {suspiros.map(art => <SimpleImageCard key={art.id} art={art} />)}
+                                        {suspiros.length === 0 && hardcodedSuspiro.map((src, idx) => <SimpleImageCard key={`susp-${idx}`} src={src} />)}
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -1265,6 +1377,10 @@
                                             <label className="block text-xs text-gray-400 uppercase mb-1">Categoria</label>
                                             <select className="admin-input" value={artForm.category} onChange={e => setArtForm({...artForm, category: e.target.value})}>
                                                 <option>Cerâmica / Biscuit</option>
+                                                <option>Pintura - Acrílica</option>
+                                                <option>Pintura - Aquarela</option>
+                                                <option>Processo Criativo</option>
+                                                <option>Arte de Suspiro</option>
                                                 <option>Pintura / Ilustração</option>
                                             </select>
                                         </div>
